@@ -30,6 +30,21 @@
       opacity:0;pointer-events:none;transition:.2s ease}.ox-toast.show{opacity:1;transform:translate(-50%,0)}
     .ox-refresh{border:1px solid rgba(255,60,60,.32);background:#151517;color:#fff;border-radius:9px;
       min-height:40px;padding:0 14px;font:600 12px Montserrat,Inter,sans-serif;cursor:pointer}
+    .ox-command-overlay{position:fixed;inset:0;z-index:280;background:rgba(0,0,0,.76);backdrop-filter:blur(8px);
+      display:none;align-items:flex-start;justify-content:center;padding:12vh 18px 24px}.ox-command-overlay.show{display:flex}
+    .ox-command{width:min(620px,100%);background:#121214;border:1px solid rgba(255,60,60,.34);
+      border-radius:14px;box-shadow:0 34px 90px rgba(0,0,0,.72);overflow:hidden}
+    .ox-command-head{display:flex;align-items:center;gap:12px;padding:15px;border-bottom:1px solid rgba(255,60,60,.2)}
+    .ox-command-head input{flex:1;min-width:0;background:#090909;border:1px solid rgba(255,60,60,.25);
+      color:#fff;border-radius:9px;padding:13px 14px;font:500 14px Inter,sans-serif;outline:none}
+    .ox-command-head input:focus{border-color:#ff1a1a}.ox-command-close{border:0;background:transparent;color:#aaa;
+      width:38px;height:38px;border-radius:8px;font-size:20px;cursor:pointer}.ox-command-close:hover{background:#242426;color:#fff}
+    .ox-command-list{padding:9px;max-height:54vh;overflow:auto}.ox-command-item{display:flex;align-items:center;
+      justify-content:space-between;gap:16px;padding:13px 14px;border-radius:9px;color:#fff;text-decoration:none;
+      font:600 13px Montserrat,Inter,sans-serif}.ox-command-item:hover,.ox-command-item:focus{background:#241313;outline:none}
+    .ox-command-item span{color:#8d8d93;font:500 11px Inter,sans-serif}.ox-command-empty{padding:26px;text-align:center;color:#929297;
+      font:500 13px Inter,sans-serif}.ox-command-hint{padding:10px 14px;border-top:1px solid rgba(255,60,60,.16);
+      color:#777;font:500 10px Montserrat,Inter,sans-serif;text-align:right}
     .ox-menu-toggle{display:none;border:1px solid rgba(255,60,60,.32);background:#151517;color:#fff;
       border-radius:8px;width:42px;height:42px;font-size:20px;cursor:pointer}
     @media(max-width:880px){
@@ -62,6 +77,13 @@
       box.appendChild(back);
     }
 
+    const menu = document.createElement("button");
+    menu.type = "button";
+    menu.textContent = "⌘ Menu";
+    menu.setAttribute("aria-label", "Abrir menu rápido");
+    menu.addEventListener("click", openCommandMenu);
+    box.appendChild(menu);
+
     const top = document.createElement("button");
     top.type = "button";
     top.className = "ox-backtop";
@@ -71,6 +93,77 @@
     box.appendChild(top);
     document.body.appendChild(box);
     addEventListener("scroll", () => top.classList.toggle("show", scrollY > 500), { passive: true });
+  }
+
+  const commandItems = [
+    ["Dashboard", "Visão geral e indicadores", "origenix-dashboard-v3.html"],
+    ["Novo cadastro", "Cadastrar estabelecimento", "origenix-sistema-login.html"],
+    ["Clientes e documentos", "Gerenciar estabelecimentos", "origenix-sistema-login.html"],
+    ["Emissão e assinatura", "Documentos prontos para assinatura", "origenix-emissao-v3.html"],
+    ["Recuperar senha", "Redefinir acesso", "recuperar-senha.html"],
+    ["Site institucional", "Voltar ao site público", "index.html"]
+  ];
+
+  function ensureCommandMenu() {
+    if ($("#oxCommandOverlay")) return;
+    const overlay = document.createElement("div");
+    overlay.id = "oxCommandOverlay";
+    overlay.className = "ox-command-overlay";
+    overlay.setAttribute("role", "dialog");
+    overlay.setAttribute("aria-modal", "true");
+    overlay.setAttribute("aria-label", "Menu rápido");
+    overlay.innerHTML = `
+      <div class="ox-command">
+        <div class="ox-command-head">
+          <input id="oxCommandSearch" type="search" placeholder="Buscar tela ou ação..." autocomplete="off">
+          <button class="ox-command-close" type="button" aria-label="Fechar menu">×</button>
+        </div>
+        <div class="ox-command-list" id="oxCommandList"></div>
+        <div class="ox-command-hint">Ctrl + K para abrir · Esc para fechar</div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    $(".ox-command-close", overlay).addEventListener("click", closeCommandMenu);
+    overlay.addEventListener("click", (event) => {
+      if (event.target === overlay) closeCommandMenu();
+    });
+    $("#oxCommandSearch", overlay).addEventListener("input", renderCommandItems);
+    $("#oxCommandSearch", overlay).addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        const first = $(".ox-command-item", overlay);
+        if (first) first.click();
+      }
+    });
+    renderCommandItems();
+  }
+
+  function renderCommandItems() {
+    const list = $("#oxCommandList");
+    if (!list) return;
+    const query = ($("#oxCommandSearch")?.value || "").trim().toLocaleLowerCase("pt-BR");
+    const filtered = commandItems.filter(([title, detail]) =>
+      `${title} ${detail}`.toLocaleLowerCase("pt-BR").includes(query)
+    );
+    list.innerHTML = filtered.length
+      ? filtered.map(([title, detail, href]) =>
+        `<a class="ox-command-item" href="${href}">${title}<span>${detail}</span></a>`
+      ).join("")
+      : '<div class="ox-command-empty">Nenhuma ação encontrada.</div>';
+  }
+
+  function openCommandMenu() {
+    ensureCommandMenu();
+    $("#oxCommandOverlay").classList.add("show");
+    document.body.style.overflow = "hidden";
+    const input = $("#oxCommandSearch");
+    input.value = "";
+    renderCommandItems();
+    setTimeout(() => input.focus(), 0);
+  }
+
+  function closeCommandMenu() {
+    $("#oxCommandOverlay")?.classList.remove("show");
+    document.body.style.overflow = "";
   }
 
   function enhancePasswordFields() {
@@ -279,7 +372,13 @@
   }
 
   document.addEventListener("keydown", (event) => {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+      event.preventDefault();
+      openCommandMenu();
+      return;
+    }
     if (event.key === "Escape") {
+      closeCommandMenu();
       window.closeLeadModal?.();
       $(".nav-links")?.classList.remove("ox-open");
     }
