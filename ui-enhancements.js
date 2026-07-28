@@ -220,23 +220,51 @@
       notification.addEventListener("click", () => showToast("Nenhuma nova notificação."));
     }
 
+    const dashboardRoutes = [
+      ["visão geral", "origenix-dashboard-v3.html"],
+      ["clientes", "origenix-sistema-login.html"],
+      ["projetos", "origenix-sistema-login.html"],
+      ["documentos", "origenix-sistema-login.html"],
+      ["rts & art", "origenix-emissao-v3.html"],
+      ["licenças", "origenix-sistema-login.html"]
+    ];
+
     $$(".nav-item").forEach((item) => {
       if (item.dataset.oxNav || item.closest("a")) return;
       item.dataset.oxNav = "1";
       item.setAttribute("role", "button");
       item.setAttribute("tabindex", "0");
-      const activate = () => showToast(`${item.textContent.trim()} estará disponível em breve.`);
+      const label = item.textContent.replace(/\s+/g, " ").trim();
+      const normalizedLabel = label.toLocaleLowerCase("pt-BR");
+      const route = dashboardRoutes.find(([prefix]) => normalizedLabel.startsWith(prefix))?.[1];
+      if (route) {
+        item.setAttribute("aria-label", `Abrir ${label}`);
+        item.title = `Abrir ${label}`;
+      } else {
+        item.setAttribute("aria-label", `${label} — em preparação`);
+        item.title = "Módulo em preparação";
+      }
+      const activate = () => {
+        if (route) location.assign(route);
+        else showToast(`${label} estará disponível em breve.`);
+      };
       item.addEventListener("click", activate);
       item.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" || event.key === " ") activate();
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          activate();
+        }
       });
     });
 
     const email = $("#userEmail");
-    if (email && email.textContent.includes("@")) {
+    if (email && email.textContent.includes("@") && !email.dataset.oxAvatar) {
+      email.dataset.oxAvatar = "1";
       const initials = email.textContent.split("@")[0].split(/[._-]/).filter(Boolean)
         .slice(0, 2).map((part) => part[0].toUpperCase()).join("") || "OX";
-      $$(".avatar").forEach((avatar) => avatar.textContent = initials);
+      $$(".avatar").forEach((avatar) => {
+        if (avatar.textContent !== initials) avatar.textContent = initials;
+      });
     }
   }
 
