@@ -24,6 +24,12 @@
     .ox-auth-actions{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap}
     .ox-auth-link{background:transparent;box-shadow:none;min-height:34px}
     .ox-cancel{width:100%;margin-top:8px}
+    .ox-toast{position:fixed;left:50%;bottom:26px;z-index:260;transform:translate(-50%,20px);
+      padding:12px 18px;border:1px solid rgba(255,60,60,.38);border-radius:9px;background:#171719;
+      color:#fff;font:600 12px Montserrat,Inter,sans-serif;box-shadow:0 18px 50px rgba(0,0,0,.5);
+      opacity:0;pointer-events:none;transition:.2s ease}.ox-toast.show{opacity:1;transform:translate(-50%,0)}
+    .ox-refresh{border:1px solid rgba(255,60,60,.32);background:#151517;color:#fff;border-radius:9px;
+      min-height:40px;padding:0 14px;font:600 12px Montserrat,Inter,sans-serif;cursor:pointer}
     .ox-menu-toggle{display:none;border:1px solid rgba(255,60,60,.32);background:#151517;color:#fff;
       border-radius:8px;width:42px;height:42px;font-size:20px;cursor:pointer}
     @media(max-width:880px){
@@ -149,12 +155,98 @@
     });
   }
 
+  function showToast(message) {
+    let toast = $(".ox-toast");
+    if (!toast) {
+      toast = document.createElement("div");
+      toast.className = "ox-toast";
+      toast.setAttribute("role", "status");
+      document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.classList.add("show");
+    clearTimeout(showToast.timer);
+    showToast.timer = setTimeout(() => toast.classList.remove("show"), 2600);
+  }
+
+  function enhanceDashboard() {
+    const app = $("#mainApp");
+    if (!app) return;
+
+    const date = $(".topbar .sub");
+    if (date && !date.dataset.oxDate) {
+      date.dataset.oxDate = "1";
+      date.textContent = new Intl.DateTimeFormat("pt-BR", {
+        weekday: "long", day: "2-digit", month: "long", year: "numeric"
+      }).format(new Date()).replace(/^./, (letter) => letter.toUpperCase());
+    }
+
+    const topbarRight = $(".topbar-right");
+    if (topbarRight && !$(".ox-refresh", topbarRight)) {
+      const refresh = document.createElement("button");
+      refresh.type = "button";
+      refresh.className = "ox-refresh";
+      refresh.textContent = "↻ Atualizar";
+      refresh.addEventListener("click", async () => {
+        refresh.disabled = true;
+        refresh.textContent = "Atualizando...";
+        try {
+          if (typeof window.loadDashboard === "function") await window.loadDashboard();
+          else location.reload();
+          showToast("Dados atualizados.");
+        } finally {
+          refresh.disabled = false;
+          refresh.textContent = "↻ Atualizar";
+        }
+      });
+      topbarRight.prepend(refresh);
+    }
+
+    const search = $(".search input");
+    if (search && !search.dataset.oxSearch) {
+      search.dataset.oxSearch = "1";
+      search.setAttribute("aria-label", "Buscar no dashboard");
+      search.addEventListener("input", () => {
+        const query = search.value.trim().toLocaleLowerCase("pt-BR");
+        $$("tbody tr").forEach((row) => {
+          row.hidden = !!query && !row.textContent.toLocaleLowerCase("pt-BR").includes(query);
+        });
+      });
+    }
+
+    const notification = $('button[aria-label="Notificações"]');
+    if (notification && !notification.dataset.oxNotification) {
+      notification.dataset.oxNotification = "1";
+      notification.addEventListener("click", () => showToast("Nenhuma nova notificação."));
+    }
+
+    $$(".nav-item").forEach((item) => {
+      if (item.dataset.oxNav || item.closest("a")) return;
+      item.dataset.oxNav = "1";
+      item.setAttribute("role", "button");
+      item.setAttribute("tabindex", "0");
+      const activate = () => showToast(`${item.textContent.trim()} estará disponível em breve.`);
+      item.addEventListener("click", activate);
+      item.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") activate();
+      });
+    });
+
+    const email = $("#userEmail");
+    if (email && email.textContent.includes("@")) {
+      const initials = email.textContent.split("@")[0].split(/[._-]/).filter(Boolean)
+        .slice(0, 2).map((part) => part[0].toUpperCase()).join("") || "OX";
+      $$(".avatar").forEach((avatar) => avatar.textContent = initials);
+    }
+  }
+
   function run() {
     addUtilityButtons();
     enhancePasswordFields();
     enhanceAuth();
     enhanceLeadModal();
     enhanceMobileMenu();
+    enhanceDashboard();
     improveButtons();
   }
 
