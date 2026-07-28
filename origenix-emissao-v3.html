@@ -228,6 +228,8 @@ let authMode = 'login';
 let currentUser = null;
 let selectedIds = new Set();
 let docsCache = [];
+let currentRole = 'cliente';
+let canSignDocuments = false;
 
 function setAuthMode(mode){
   authMode = mode;
@@ -242,48 +244,73 @@ function setLoginMsg(msg, type){
   el.className = 'login-msg' + (type ? ' '+type : '');
 }
 
-async function handleAuth(){
-  const email = document.getElementById('auth_email').value.trim();
-  const password = document.getElementById('auth_password').value;
-  if(!email || !password){ setLoginMsg('Preencha e-mail e senha.', 'error'); return; }
-  const btn = document.getElementById('btnAuth');
-  btn.disabled = true;
-  setLoginMsg(authMode==='login' ? 'Entrando...' : 'Criando conta...');
+function authErrorMessage(error){
+  console.error('Falha de autenticação', error);
+  if(error && error.code === 'invalid_credentials') return 'E-mail ou senha incorretos.';
+  if(error && error.code === 'email_not_confirmed') return 'Confirme seu e-mail antes de entrar.';
+  if(error && error.code === 'over_request_rate_limit') return 'Muitas tentativas. Aguarde alguns minutos.';
+  return 'Não foi possível concluir. Tente novamente.';
+}
 
-  if(authMode === 'login'){
-    const { data, error } = await supa.auth.signInWithPassword({ email, password });
+async function handleAuth(){
+  const emailInput = document.getElementById('auth_email');
+  const passwordInput = document.getElementById('auth_password');
+  const email = emailInput.value.trim().toLowerCase();
+  const password = passwordInput.value;
+  if(!email || !email.includes('@')){ setLoginMsg('Informe um e-mail válido.', 'error'); emailInput.focus(); return; }
+  if(password.length < 6){ setLoginMsg('A senha deve ter pelo menos 6 caracteres.', 'error'); passwordInput.focus(); return; }
+  const btn = document.getElementById('btnAuth');
+  const originalLabel = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = authMode === 'login' ? 'Entrando...' : 'Criando conta...';
+  setLoginMsg('');
+  try {
+    if(authMode === 'login'){
+      const { error } = await supa.auth.signInWithPassword({ email, password });
+      if(error) setLoginMsg(authErrorMessage(error), 'error');
+    } else {
+      const { data, error } = await supa.auth.signUp({ email, password });
+      if(error) setLoginMsg(authErrorMessage(error), 'error');
+      else if(!data.session) setLoginMsg('Conta criada! Confirme seu e-mail antes de entrar.', 'ok');
+    }
+  } catch(error){
+    console.error(error);
+    setLoginMsg('Falha de conexão. Tente novamente.', 'error');
+  } finally {
     btn.disabled = false;
-    if(error){ setLoginMsg(error.message, 'error'); return; }
-    onAuthenticated(data.user);
-  } else {
-    const { data, error } = await supa.auth.signUp({ email, password });
-    btn.disabled = false;
-    if(error){ setLoginMsg(error.message, 'error'); return; }
-    if(data.session){ onAuthenticated(data.user); }
-    else { setLoginMsg('Conta criada! Verifique seu e-mail para confirmar antes de entrar.', 'ok'); }
+    btn.textContent = originalLabel;
   }
 }
 
 async function handleLogout(){
   await supa.auth.signOut();
-  currentUser = null;
-  document.getElementById('mainApp').style.display = 'none';
-  document.getElementById('loginView').style.display = 'flex';
-  document.getElementById('auth_password').value = '';
 }
 
-function onAuthenticated(user){
+async function onAuthenticated(user){
+  if(!user) return;
+  const sameUser = currentUser && currentUser.id === user.id;
   currentUser = user;
-  document.getElementById('userEmail').textContent = user.email;
+  document.getElementById('userEmail').textContent = user.email || 'Usuário';
   document.getElementById('loginView').style.display = 'none';
   document.getElementById('mainApp').style.display = 'grid';
-  loadDocs();
+  if(!sameUser) await loadDocs();
 }
 
 async function initAuth(){
-  if(!supa) return;
-  const { data } = await supa.auth.getSession();
-  if(data.session && data.session.user){ onAuthenticated(data.session.user); }
+  if(!supa){ setLoginMsg('Serviço de autenticação indisponível.', 'error'); return; }
+  supa.auth.onAuthStateChange((event, session) => {
+    setTimeout(() => {
+      if(session && session.user) onAuthenticated(session.user);
+      else if(event === 'SIGNED_OUT'){
+        currentUser = null;
+        document.getElementById('mainApp').style.display = 'none';
+        document.getElementById('loginView').style.display = 'flex';
+      }
+    }, 0);
+  });
+  const { data, error } = await supa.auth.getUser();
+  if(error && error.name !== 'AuthSessionMissingError') console.error(error);
+  if(data && data.user) await onAuthenticated(data.user);
   else {
     document.getElementById('loginView').style.display = 'flex';
     document.getElementById('mainApp').style.display = 'none';
@@ -314,16 +341,27 @@ function timeAgo(dateStr){
 async function loadDocs(){
   setConnStatus(null, 'Conectando ao banco de dados...');
 
-  const [pendentesRes, assinadosRes] = await Promise.all([
+  const [pendentesRes, assinadosRes, perfilRes] = await Promise.all([
     supa.from('documentos').select('*, empresas(nome, rt_nome, rt_crmv)').eq('status', 'gerado').order('criado_em', { ascending:false }),
-    supa.from('documentos').select('*, empresas(nome)').eq('status', 'assinado').order('atualizado_em', { ascending:false }).limit(8)
+    supa.from('documentos').select('*, empresas(nome)').eq('status', 'assinado').order('atualizado_em', { ascending:false }).limit(8),
+    supa.from('perfis').select('papel').eq('user_id', currentUser.id).maybeSingle()
   ]);
 
+  currentRole = perfilRes.data ? perfilRes.data.papel : 'cliente';
+  canSignDocuments = currentRole === 'administrador' || currentRole === 'rt';
+  const signButton = document.getElementById('btnSign');
+  signButton.title = canSignDocuments ? 'Assinar documentos selecionados' : 'Somente Administrador ou RT pode assinar';
+  if(!canSignDocuments) signButton.disabled = true;
+
   if(pendentesRes.error || assinadosRes.error){
-    setConnStatus('error', 'Erro ao carregar: ' + (pendentesRes.error||assinadosRes.error).message);
+    const error = pendentesRes.error || assinadosRes.error;
+    console.error('Falha ao carregar emissão', error);
+    setConnStatus('error', 'Não foi possível carregar os documentos. Tente atualizar.');
   } else {
-    setConnStatus('ok', 'Conectado ao banco de dados ORIGENIX');
+    const roleLabel = currentRole === 'administrador' ? 'Administrador' : currentRole.toUpperCase();
+    setConnStatus('ok', canSignDocuments ? 'Conectado como ' + roleLabel : 'Visualização protegida — assinatura restrita a RT/Admin');
   }
+  if(perfilRes.error) console.error('Falha ao carregar perfil', perfilRes.error);
 
   docsCache = pendentesRes.data || [];
   renderDocsList();
@@ -359,7 +397,7 @@ function updateSummary(){
   const selected = docsCache.filter(d=>selectedIds.has(d.id));
   document.getElementById('docsCount').textContent = selected.length + ' selecionados';
   document.getElementById('sumCount').textContent = selected.length;
-  document.getElementById('btnSign').disabled = selected.length === 0;
+  document.getElementById('btnSign').disabled = selected.length === 0 || !canSignDocuments;
 
   const summaryEl = document.getElementById('signSummary');
   let rows = `<div class="sum-row"><span class="k">Documentos selecionados</span><span class="v">${selected.length}</span></div>`;
@@ -375,24 +413,37 @@ function updateSummary(){
 async function assinarSelecionados(){
   const ids = [...selectedIds];
   if(ids.length === 0) return;
+  if(!canSignDocuments){
+    setConnStatus('error', 'Somente Administrador ou RT pode assinar documentos.');
+    return;
+  }
+  if(!window.confirm(`Confirmar a assinatura de ${ids.length} documento(s)? Esta ação ficará registrada.`)) return;
+
   const btn = document.getElementById('btnSign');
   btn.disabled = true;
   btn.textContent = 'Assinando...';
 
-  const { error } = await supa.from('documentos')
-    .update({ status: 'assinado', atualizado_em: new Date().toISOString() })
-    .in('id', ids);
-
-  if(error){
-    alert('Erro ao assinar: ' + error.message);
-    btn.disabled = false;
+  try {
+    const { error } = await supa.from('documentos')
+      .update({ status: 'assinado', atualizado_em: new Date().toISOString() })
+      .in('id', ids);
+    if(error){
+      console.error('Falha ao assinar', error);
+      setConnStatus('error', error.code === '42501'
+        ? 'Seu perfil não possui permissão para assinar.'
+        : 'Não foi possível assinar os documentos. Tente novamente.');
+      return;
+    }
+    selectedIds.clear();
+    await loadDocs();
+    setConnStatus('ok', `${ids.length} documento(s) assinado(s) com sucesso.`);
+  } catch(error){
+    console.error(error);
+    setConnStatus('error', 'Falha de conexão durante a assinatura.');
+  } finally {
     btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.4 8-8 10-4.6-2-8-5-8-10V6z"/></svg> Assinar Documentos Selecionados';
-    return;
+    btn.disabled = selectedIds.size === 0 || !canSignDocuments;
   }
-
-  selectedIds.clear();
-  await loadDocs();
-  btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.4 8-8 10-4.6-2-8-5-8-10V6z"/></svg> Assinar Documentos Selecionados';
 }
 
 function renderLog(assinados){
