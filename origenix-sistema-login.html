@@ -314,6 +314,9 @@ function setConnStatus(state, msg){
 // ---- AUTENTICAÇÃO ----
 let authMode = 'login';
 let currentUser = null;
+let currentRole = 'cliente';
+let canCreateDocuments = false;
+let canDeleteCompanies = false;
 
 function setAuthMode(mode){
   authMode = mode;
@@ -328,53 +331,79 @@ function setLoginMsg(msg, type){
   el.className = 'login-msg' + (type ? ' '+type : '');
 }
 
+function authErrorMessage(error){
+  console.error('Falha de autenticação', error);
+  if(error && error.code === 'invalid_credentials') return 'E-mail ou senha incorretos.';
+  if(error && error.code === 'email_not_confirmed') return 'Confirme seu e-mail antes de entrar.';
+  if(error && error.code === 'over_request_rate_limit') return 'Muitas tentativas. Aguarde alguns minutos.';
+  return 'Não foi possível concluir. Tente novamente.';
+}
+
 async function handleAuth(){
-  const email = document.getElementById('auth_email').value.trim();
-  const password = document.getElementById('auth_password').value;
-  if(!email || !password){ setLoginMsg('Preencha e-mail e senha.', 'error'); return; }
-
+  const emailInput = document.getElementById('auth_email');
+  const passwordInput = document.getElementById('auth_password');
+  const email = emailInput.value.trim().toLowerCase();
+  const password = passwordInput.value;
+  if(!email || !email.includes('@')){ setLoginMsg('Informe um e-mail válido.', 'error'); emailInput.focus(); return; }
+  if(password.length < 6){ setLoginMsg('A senha deve ter pelo menos 6 caracteres.', 'error'); passwordInput.focus(); return; }
   const btn = document.getElementById('btnAuth');
+  const originalLabel = btn.textContent;
   btn.disabled = true;
-  setLoginMsg(authMode==='login' ? 'Entrando...' : 'Criando conta...');
-
-  if(authMode === 'login'){
-    const { data, error } = await supa.auth.signInWithPassword({ email, password });
-    btn.disabled = false;
-    if(error){ setLoginMsg(error.message, 'error'); return; }
-    onAuthenticated(data.user);
-  } else {
-    const { data, error } = await supa.auth.signUp({ email, password });
-    btn.disabled = false;
-    if(error){ setLoginMsg(error.message, 'error'); return; }
-    if(data.session){
-      onAuthenticated(data.user);
+  btn.textContent = authMode === 'login' ? 'Entrando...' : 'Criando conta...';
+  setLoginMsg('');
+  try {
+    if(authMode === 'login'){
+      const { error } = await supa.auth.signInWithPassword({ email, password });
+      if(error) setLoginMsg(authErrorMessage(error), 'error');
     } else {
-      setLoginMsg('Conta criada! Verifique seu e-mail para confirmar antes de entrar.', 'ok');
+      const { data, error } = await supa.auth.signUp({ email, password });
+      if(error) setLoginMsg(authErrorMessage(error), 'error');
+      else if(!data.session) setLoginMsg('Conta criada! Confirme seu e-mail antes de entrar.', 'ok');
     }
+  } catch(error){
+    console.error(error);
+    setLoginMsg('Falha de conexão. Tente novamente.', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalLabel;
   }
 }
 
-async function handleLogout(){
-  await supa.auth.signOut();
-  currentUser = null;
-  document.getElementById('mainView').style.display = 'none';
-  document.getElementById('loginView').style.display = 'flex';
-  document.getElementById('auth_password').value = '';
-}
+async function handleLogout(){ await supa.auth.signOut(); }
 
-function onAuthenticated(user){
+async function onAuthenticated(user){
+  if(!user) return;
+  const sameUser = currentUser && currentUser.id === user.id;
   currentUser = user;
-  document.getElementById('userEmail').textContent = user.email;
+  document.getElementById('userEmail').textContent = user.email || 'Usuário';
   document.getElementById('loginView').style.display = 'none';
   document.getElementById('mainView').style.display = 'grid';
-  testConnection().then(renderClientList);
+
+  const { data: perfil, error } = await supa.from('perfis').select('papel').eq('user_id', user.id).maybeSingle();
+  if(error) console.error('Falha ao carregar perfil', error);
+  currentRole = perfil ? perfil.papel : 'cliente';
+  canCreateDocuments = ['administrador','rt','consultor'].includes(currentRole);
+  canDeleteCompanies = currentRole === 'administrador';
+
+  if(!sameUser) await testConnection().then(renderClientList);
 }
 
 async function initAuth(){
-  const { data } = await supa.auth.getSession();
-  if(data.session && data.session.user){
-    onAuthenticated(data.session.user);
-  } else {
+  if(!supa){ setLoginMsg('Serviço de autenticação indisponível.', 'error'); return; }
+  supa.auth.onAuthStateChange((event, session) => {
+    setTimeout(() => {
+      if(session && session.user) onAuthenticated(session.user);
+      else if(event === 'SIGNED_OUT'){
+        currentUser = null;
+        document.getElementById('mainView').style.display = 'none';
+        document.getElementById('loginView').style.display = 'flex';
+      }
+    }, 0);
+  });
+  const { data, error } = await supa.auth.getUser();
+  if(error && error.name !== 'AuthSessionMissingError') console.error(error);
+  if(data && data.user) await onAuthenticated(data.user);
+  else {
     document.getElementById('loginView').style.display = 'flex';
     document.getElementById('mainView').style.display = 'none';
   }
@@ -471,8 +500,8 @@ async function renderClientList(){
         <span>${escapeHtml(c.tipo_estabelecimento||'—')} · ${escapeHtml(c.municipio||'—')} · RT: ${escapeHtml(c.rt_nome||'—')}</span>
       </div>
       <div class="actions">
-        <button class="mini-btn emit" onclick="gerarDocumento('${c.id}')">Gerar Documento</button>
-        <button class="mini-btn" onclick="excluirCliente('${c.id}')">Excluir</button>
+        ${canCreateDocuments ? `<button class="mini-btn emit" onclick="gerarDocumento('${c.id}')">Gerar Documento</button>` : ''}
+        ${canDeleteCompanies ? `<button class="mini-btn" onclick="excluirCliente('${c.id}')">Excluir</button>` : ''}
       </div>
     </div>
   `).join('');
@@ -499,6 +528,7 @@ async function sha256(text){
 }
 
 async function gerarDocumento(clientId){
+  if(!canCreateDocuments){ showToast('Seu perfil não possui permissão para emitir documentos.', true); return; }
   const list = await getClientes();
   const cliente = list.find(c=>c.id===clientId);
   if(!cliente) return;
