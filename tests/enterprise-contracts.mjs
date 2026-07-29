@@ -134,7 +134,7 @@ const migrationNames = (await readdir(migrationDir))
   .sort();
 
 contract("migrations são sequenciais e completas", () => {
-  assert.equal(migrationNames.length, 14, "esperadas exatamente 14 migrations");
+  assert.equal(migrationNames.length, 15, "esperadas exatamente 15 migrations");
   migrationNames.forEach((name, index) => {
     const expected = String(index + 1).padStart(3, "0");
     assert.ok(name.startsWith(`${expected}_`), `sequência inválida em ${name}`);
@@ -321,6 +321,8 @@ contract("trilha de auditoria é imutável para usuários da aplicação", () =>
     "drop policy if exists auditorias_update",
     "drop policy if exists auditorias_delete",
     "revoke update, delete on table public.auditorias from authenticated",
+    "revoke all on table public.auditorias from authenticated",
+    "grant select, insert on table public.auditorias to authenticated",
   ]);
 });
 
