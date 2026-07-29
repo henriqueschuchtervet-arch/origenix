@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ORIGENIX — Programas de Autocontrole</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <style>
+    :root{--bg:#080809;--panel:#121214;--panel2:#19191c;--line:#323237;--text:#f6f6f7;--muted:#9b9ba3;--red:#f12525;--green:#36b56b;--amber:#e4a02b}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-serif}
+    button,input,select,textarea{font:inherit}.hidden{display:none!important}
+    .login{min-height:100vh;display:grid;place-items:center;padding:24px}.login-card{width:min(420px,100%);background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:28px}
+    .brand{font:800 22px Orbitron,sans-serif;letter-spacing:1px}.brand b{color:var(--red)}.eyebrow{color:var(--red);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase}
+    h1{font:800 clamp(23px,3vw,36px) Orbitron,sans-serif;margin:9px 0}p{color:var(--muted);line-height:1.55}
+    label{display:block;color:var(--muted);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;margin:16px 0 7px}
+    input,select,textarea{width:100%;border:1px solid var(--line);border-radius:9px;background:#09090a;color:var(--text);padding:12px}
+    button,.button{border:1px solid var(--line);border-radius:9px;background:var(--panel2);color:var(--text);padding:11px 15px;cursor:pointer;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+    button:hover,.button:hover{border-color:var(--red)}button:disabled{opacity:.5;cursor:not-allowed}.primary{background:var(--red);border-color:var(--red)}.danger{color:#ff7777}
+    .app{min-height:100vh}.top{position:sticky;top:0;z-index:20;background:rgba(8,8,9,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+    .top-inner{max-width:1440px;margin:auto;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:18px}.top-actions{display:flex;gap:8px;flex-wrap:wrap}
+    main{max-width:1440px;margin:auto;padding:28px 24px 80px}.hero{display:flex;justify-content:space-between;gap:24px;align-items:end;flex-wrap:wrap}
+    .controls{margin-top:24px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;display:grid;grid-template-columns:2fr repeat(3,1fr) auto;gap:12px;align-items:end}
+    .controls label{margin-top:0}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0}.stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
+    .stat span{display:block;color:var(--muted);font-size:11px;text-transform:uppercase}.stat b{font:800 28px Orbitron,sans-serif;display:block;margin-top:8px}
+    .toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:24px 0 14px}.toolbar input{max-width:360px}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.pac{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:18px}
+    .pac-head{display:flex;justify-content:space-between;gap:14px}.code{color:var(--red);font:700 11px Orbitron,sans-serif}.pac h3{font-size:16px;margin:7px 0}.pac p{font-size:13px;margin:0}
+    .badge{border:1px solid var(--line);border-radius:999px;padding:5px 9px;font-size:10px;font-weight:800;text-transform:uppercase;height:max-content}.implantado{color:var(--green);border-color:#245d3b}.aprovado{color:#6baeff}.em_revisao{color:var(--amber)}
+    .pac-meta{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0;color:var(--muted);font-size:11px}.pac-actions{display:flex;gap:8px;flex-wrap:wrap}.pac-actions select{width:auto;min-width:140px;padding:9px}
+    .empty{padding:48px;text-align:center;background:var(--panel);border:1px dashed var(--line);border-radius:13px;color:var(--muted)}
+    .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,18px);background:#1b1b1e;border:1px solid var(--red);border-radius:9px;padding:12px 18px;opacity:0;pointer-events:none;transition:.2s;z-index:50}.toast.show{opacity:1;transform:translate(-50%,0)}
+    @media(max-width:980px){.controls{grid-template-columns:1fr 1fr}.stats{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr}}
+    @media(max-width:600px){.controls{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.top-inner,main{padding-left:14px;padding-right:14px}.top-actions .button{display:none}}
+    @media print{.top,.controls,.toolbar,.pac-actions,.ox-utility{display:none!important}body{background:white;color:black}.pac{break-inside:avoid;background:white;border-color:#bbb}.pac p,.pac-meta{color:#444}main{padding:0}.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <section class="login" id="loginView">
+    <div class="login-card">
+      <div class="brand">ORIGENI<b>X</b></div>
+      <div class="eyebrow" style="margin-top:24px">Motor regulatório</div>
+      <h1>Programas de Autocontrole</h1>
+      <p>Entre para configurar, implantar, monitorar e auditar os PACs do estabelecimento.</p>
+      <label for="email">E-mail</label><input id="email" type="email" autocomplete="email">
+      <label for="password">Senha</label><input id="password" type="password" autocomplete="current-password">
+      <button class="primary" id="loginButton" style="width:100%;margin-top:18px">Entrar</button>
+      <div id="loginMessage" style="color:#ff7777;font-size:12px;margin-top:12px"></div>
+    </div>
+  </section>
+
+  <div class="app hidden" id="app">
+    <header class="top"><div class="top-inner">
+      <div><div class="brand">ORIGENI<b>X</b></div><div style="color:var(--muted);font-size:11px;margin-top:3px">PAC · APPCC · PPHO · REGISTROS AUDITÁVEIS</div></div>
+      <div class="top-actions">
+        <a class="button" href="origenix-dashboard-v3.html">Dashboard</a>
+        <a class="button" href="origenix-emissao-v3.html">Emissão</a>
+        <button id="logoutButton">Sair</button>
+      </div>
+    </div></header>
+    <main>
+      <div class="hero">
+        <div><div class="eyebrow">Conformidade baseada em risco</div><h1>Central de Autocontrole</h1><p>Configuração por estabelecimento, atividade, espécie e serviço de inspeção.</p></div>
+        <button onclick="window.print()">Imprimir relatório</button>
+      </div>
+
+      <section class="controls">
+        <div><label for="company">Estabelecimento</label><select id="company"></select></div>
+        <div><label for="service">Inspeção</label><select id="service"><option>SIF</option><option>SISBI</option><option>SIE</option><option>SIM</option></select></div>
+        <div><label for="activity">Atividade</label><select id="activity"><option value="abate">Abate</option><option value="processamento">Processamento</option><option value="todos">Outros</option></select></div>
+        <div><label for="species">Espécie</label><select id="species"><option value="bovinos">Bovinos</option><option value="bubalinos">Bubalinos</option><option value="suinos">Suínos</option><option value="aves">Aves</option><option value="ovinos">Ovinos</option><option value="caprinos">Caprinos</option><option value="todas">Outras</option></select></div>
+        <button class="primary" id="configureButton">Configurar PACs</button>
+      </section>
+
+      <section class="stats">
+        <div class="stat"><span>Programas aplicáveis</span><b id="totalStat">0</b></div>
+        <div class="stat"><span>Implantados</span><b id="implementedStat">0</b></div>
+        <div class="stat"><span>Em revisão</span><b id="reviewStat">0</b></div>
+        <div class="stat"><span>Não conformidades abertas</span><b id="ncStat">0</b></div>
+      </section>
+
+      <div class="toolbar"><div><b>Programas do estabelecimento</b><div id="context" style="color:var(--muted);font-size:12px;margin-top:4px"></div></div><input id="search" type="search" placeholder="Buscar PAC..."></div>
+      <section class="grid" id="pacGrid"><div class="empty">Selecione um estabelecimento.</div></section>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+
+  <script>
+    const sb = window.supabase.createClient('https://kdlyjcaxopypqeitazan.supabase.co','sb_publishable_WPAmKMxTATKGybLe9FBs1Q_X417Hc5X');
+    let user=null, role='cliente', models=[], companyPacs=[], openNc=0;
+    const $=id=>document.getElementById(id);
+    function toast(message){$('toast').textContent=message;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),2600)}
+    function escapeHtml(value){const el=document.createElement('div');el.textContent=value||'';return el.innerHTML}
+
+    $('loginButton').onclick=async()=>{
+      const button=$('loginButton');button.disabled=true;button.textContent='Entrando...';$('loginMessage').textContent='';
+      const {error}=await sb.auth.signInWithPassword({email:$('email').value.trim().toLowerCase(),password:$('password').value});
+      if(error)$('loginMessage').textContent=error.code==='invalid_credentials'?'E-mail ou senha incorretos.':'Não foi possível entrar.';
+      button.disabled=false;button.textContent='Entrar';
+    };
+    $('logoutButton').onclick=()=>sb.auth.signOut();
+    sb.auth.onAuthStateChange((event,session)=>setTimeout(()=>session?.user?start(session.user):showLogin(),0));
+    async function init(){const {data}=await sb.auth.getUser();data.user?await start(data.user):showLogin()}
+    function showLogin(){$('loginView').classList.remove('hidden');$('app').classList.add('hidden')}
+
+    async function start(authUser){
+      if(user?.id===authUser.id)return; user=authUser;
+      const {data:profile}=await sb.from('perfis').select('papel').eq('user_id',user.id).maybeSingle();role=profile?.papel||'cliente';
+      $('loginView').classList.add('hidden');$('app').classList.remove('hidden');
+      const [{data:companies,error},{data:catalog}]=await Promise.all([sb.from('empresas').select('id,nome,tipo_estabelecimento').order('nome'),sb.from('pac_modelos').select('*').eq('ativo',true).order('ordem')]);
+      if(error){toast('Não foi possível carregar os estabelecimentos.');return}
+      models=catalog||[];$('company').innerHTML=(companies||[]).map(c=>`<option value="${c.id}">${escapeHtml(c.nome)}</option>`).join('');
+      if(companies?.length)await loadCompany();else $('pacGrid').innerHTML='<div class="empty">Nenhum estabelecimento acessível.</div>';
+    }
+
+    $('company').onchange=loadCompany;$('search').oninput=render;
+    $('configureButton').onclick=async()=>{
+      if(!['administrador','rt','consultor'].includes(role)){toast('Seu perfil possui acesso somente para consulta.');return}
+      const companyId=$('company').value;if(!companyId)return;
+      const activity=$('activity').value,species=$('species').value;
+      const applicable=models.filter(m=>(m.aplicabilidade.includes('todos')||m.aplicabilidade.includes(activity))&&(m.especies.includes('todas')||m.especies.includes(species)));
+      const rows=applicable.map(m=>({empresa_id:companyId,modelo_codigo:m.codigo,versao:1,status:'rascunho',criado_por:user.id,conteudo:{servico_inspecao:$('service').value,atividade:activity,especie:species}}));
+      const {error}=await sb.from('empresa_pacs').upsert(rows,{onConflict:'empresa_id,modelo_codigo,versao',ignoreDuplicates:true});
+      if(error){console.error(error);toast('Falha ao configurar os PACs.');return}toast(`${rows.length} programas configurados.`);await loadCompany();
+    };
+
+    async function loadCompany(){
+      const companyId=$('company').value;if(!companyId)return;
+      $('pacGrid').innerHTML='<div class="empty">Carregando programas...</div>';
+      const [{data:pacs,error},{data:ncs}]=await Promise.all([
+        sb.from('empresa_pacs').select('*,pac_modelos(*)').eq('empresa_id',companyId).order('criado_em'),
+        sb.from('pac_nao_conformidades').select('id,empresa_pac_id,status').neq('status','encerrada')
+      ]);
+      if(error){console.error(error);$('pacGrid').innerHTML='<div class="empty">Não foi possível carregar os PACs.</div>';return}
+      companyPacs=pacs||[];openNc=(ncs||[]).filter(n=>companyPacs.some(p=>p.id===n.empresa_pac_id)).length;
+      $('context').textContent=`${$('company').selectedOptions[0]?.text||''} · ${$('service').value} · ${$('activity').selectedOptions[0].text} · ${$('species').selectedOptions[0].text}`;
+      updateStats();render();
+    }
+    function updateStats(){$('totalStat').textContent=companyPacs.length;$('implementedStat').textContent=companyPacs.filter(p=>p.status==='implantado').length;$('reviewStat').textContent=companyPacs.filter(p=>p.status==='em_revisao').length;$('ncStat').textContent=openNc}
+    function render(){
+      const query=$('search').value.trim().toLowerCase();const rows=companyPacs.filter(p=>`${p.modelo_codigo} ${p.pac_modelos?.titulo} ${p.pac_modelos?.categoria}`.toLowerCase().includes(query));
+      if(!rows.length){$('pacGrid').innerHTML='<div class="empty">Nenhum programa configurado. Use “Configurar PACs”.</div>';return}
+      $('pacGrid').innerHTML=rows.map(p=>`<article class="pac">
+        <div class="pac-head"><div><div class="code">${p.modelo_codigo}</div><h3>${escapeHtml(p.pac_modelos?.titulo)}</h3></div><span class="badge ${p.status}">${p.status.replace('_',' ')}</span></div>
+        <p>${escapeHtml(p.pac_modelos?.descricao)}</p>
+        <div class="pac-meta"><span>${escapeHtml(p.pac_modelos?.categoria)}</span><span>·</span><span>Versão ${p.versao}</span><span>·</span><span>${escapeHtml(p.pac_modelos?.base_legal)}</span></div>
+        <div class="pac-actions">
+          <select aria-label="Status do PAC" onchange="changeStatus('${p.id}',this.value)">${['rascunho','em_revisao','aprovado','implantado','suspenso'].map(s=>`<option value="${s}" ${p.status===s?'selected':''}>${s.replace('_',' ')}</option>`).join('')}</select>
+          <button onclick="addRecord('${p.id}')">+ Registro</button><button onclick="addNc('${p.id}')">+ Não conformidade</button>
+        </div></article>`).join('');
+    }
+    async function changeStatus(id,status){if(!['administrador','rt','consultor'].includes(role)){toast('Acesso somente para consulta.');await loadCompany();return}const {error}=await sb.from('empresa_pacs').update({status,atualizado_em:new Date().toISOString(),...(status==='aprovado'?{aprovado_por:user.id,aprovado_em:new Date().toISOString()}:{})}).eq('id',id);if(error){toast('Falha ao alterar status.');return}toast('Status atualizado.');await loadCompany()}
+    async function addRecord(id){if(!['administrador','rt','consultor'].includes(role)){toast('Acesso somente para consulta.');return}const description=prompt('Descreva o monitoramento ou verificação realizada:');if(!description)return;const result=confirm('O resultado está conforme?')?'conforme':'nao_conforme';const {error}=await sb.from('pac_registros').insert({empresa_pac_id:id,tipo:'monitoramento',resultado:result,descricao:description,registrado_por:user.id});if(error){toast('Falha ao salvar registro.');return}toast('Registro auditável salvo.');if(result==='nao_conforme')addNc(id)}
+    async function addNc(id){if(!['administrador','rt','consultor'].includes(role)){toast('Acesso somente para consulta.');return}const title=prompt('Título da não conformidade:');if(!title)return;const description=prompt('Descreva o desvio identificado:');if(!description)return;const {error}=await sb.from('pac_nao_conformidades').insert({empresa_pac_id:id,titulo:title,descricao:description,criado_por:user.id});if(error){toast('Falha ao registrar não conformidade.');return}toast('Não conformidade aberta.');await loadCompany()}
+    init();
+  </script>
+  <script src="ui-enhancements.js"></script>
+</body>
+</html>
