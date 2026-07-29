@@ -10,26 +10,17 @@
 /*.html
   Cache-Control: public, max-age=0, must-revalidate
 
+/origenix-pacs.html
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://unpkg.com; script-src-attr 'none'; style-src 'self' https://fonts.googleapis.com; style-src-attr 'none'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://kdlyjcaxopypqeitazan.supabase.co wss://kdlyjcaxopypqeitazan.supabase.co; frame-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; worker-src 'none'; manifest-src 'self'; upgrade-insecure-requests
+
 /ui-enhancements.js
   Cache-Control: public, max-age=3600, must-revalidate
 
 /origenix-v4.css
   Cache-Control: public, max-age=3600, must-revalidate
 
-/assets/*
-  Cache-Control: public, max-age=31536000, immutable
-  X-Content-Type-Options: nosniff
-/origenix-supabase.js
-  Cache-Control: public, max-age=3600, must-revalidate
-/origenix-auth.js
+/origenix-pacs.js
   Cache-Control: public, max-age=3600, must-revalidate
 
-/recuperar-senha.html
-  Content-Security-Policy: default-src 'self'; script-src 'self' https://unpkg.com; script-src-attr 'none'; style-src 'self'; style-src-attr 'none'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://kdlyjcaxopypqeitazan.supabase.co wss://kdlyjcaxopypqeitazan.supabase.co; frame-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; worker-src 'none'; manifest-src 'self'; upgrade-insecure-requests
-  Cache-Control: public, max-age=0, must-revalidate
-
-/recuperar-senha.css
-  Cache-Control: public, max-age=3600, must-revalidate
-
-/recuperar-senha.js
+/origenix-pacs.css
   Cache-Control: public, max-age=3600, must-revalidate
