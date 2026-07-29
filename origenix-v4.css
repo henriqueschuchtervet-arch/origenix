@@ -114,6 +114,37 @@ body { text-rendering: optimizeLegibility; }
 }
 .ox-breadcrumbs a { color: var(--ox-muted); text-decoration: none; }
 .ox-breadcrumbs a:hover, .ox-breadcrumbs [aria-current="page"] { color: var(--ox-text); }
+.ox-dashboard-actions {
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px;
+  margin: 0 0 18px;
+}
+.ox-dashboard-action {
+  min-height: 70px; display: flex; align-items: center; gap: 11px; padding: 13px 14px;
+  border: 1px solid var(--ox-border); border-radius: 12px; color: var(--ox-text);
+  background: linear-gradient(145deg, rgba(255,255,255,.045), rgba(255,255,255,.018));
+  text-decoration: none; box-shadow: var(--ox-shadow-sm);
+}
+.ox-dashboard-action:hover {
+  border-color: rgba(239, 41, 41, 0.42); color: #fff; background: var(--ox-accent-soft);
+}
+.ox-dashboard-action svg {
+  width: 20px; height: 20px; flex: 0 0 auto; color: var(--ox-accent);
+}
+.ox-dashboard-action strong { display: block; font: 700 12px Inter, sans-serif; }
+.ox-dashboard-action span { display: block; margin-top: 3px; color: var(--ox-muted); font: 500 10px Inter, sans-serif; }
+.ox-dashboard-action.ox-action-primary {
+  border-color: rgba(239, 41, 41, 0.42); background: var(--ox-accent-soft);
+}
+.ox-nav-ready {
+  cursor: pointer;
+  transition: color 150ms var(--ox-ease), background-color 150ms var(--ox-ease),
+    border-color 150ms var(--ox-ease), transform 120ms var(--ox-ease);
+}
+.ox-nav-ready:hover { transform: translateX(2px); }
+.ox-active-route {
+  color: var(--ox-text) !important;
+  border-color: rgba(239, 41, 41, 0.35) !important;
+}
 .ox-command-item[aria-selected="true"] {
   background: var(--ox-accent-soft); box-shadow: inset 3px 0 var(--ox-accent);
 }
@@ -187,6 +218,12 @@ body { text-rendering: optimizeLegibility; }
   .ox-dialog-overlay { align-items: end; padding: 10px; }
   .ox-dialog { width: 100%; max-height: calc(100vh - 20px); border-radius: 16px 16px 10px 10px; }
   .ox-dialog-actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .ox-dashboard-actions { display: flex; overflow-x: auto; padding-bottom: 5px; scroll-snap-type: x mandatory; }
+  .ox-dashboard-action { min-width: 176px; scroll-snap-align: start; }
+}
+
+@media (min-width: 721px) and (max-width: 1120px) {
+  .ox-dashboard-actions { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 @media (prefers-reduced-motion: reduce) {
