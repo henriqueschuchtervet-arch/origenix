@@ -425,6 +425,39 @@ modifica dados e mantém a integração atual com Supabase, GitHub e Netlify.
 - Privilégios limitados exatamente às três operações necessárias.
 - Advisor de segurança permaneceu sem novos alertas.
 - GitHub Actions aprovou 28 contratos automatizados.
+
+## Ciclo 19 — Gestão de Tarefas & Agenda
+
+- Adicionada uma área operacional para criar, editar, concluir e excluir tarefas.
+- Cada tarefa possui estabelecimento, descrição, prioridade, prazo, status e responsável.
+- A lista utiliza busca com debounce, filtros e paginação de 25 registros no servidor.
+- A visualização Agenda organiza tarefas por dia e permite navegar entre meses.
+- Indicadores mostram tarefas abertas, vencidas, previstas para hoje e concluídas.
+- Conclusões atualizam imediatamente as notificações e os indicadores.
+- Exclusões exigem confirmação e estão disponíveis apenas para Administradores.
+- A rota `?view=tasks` abre diretamente a gestão após autenticação.
+
+### Identidade, autorização e auditoria
+
+- `tarefas.responsavel` deixou a tabela legada e passou a referenciar `auth.users(id)`.
+- Administrador, RT e Consultor podem incluir e atualizar tarefas de empresas acessíveis.
+- Cliente permanece somente leitura.
+- Responsáveis são limitados ao próprio usuário, exceto para Administradores.
+- Status e prioridade possuem constraints explícitas no banco.
+- Gatilhos controlam atualização, conclusão e eventos `TAREFA_CRIADA`, `TAREFA_ATUALIZADA`, `TAREFA_CONCLUIDA` e `TAREFA_EXCLUIDA`.
+- As funções internas dos gatilhos não podem ser executadas diretamente.
+
+### Componente compartilhado
+
+- Diálogos de edição agora preservam corretamente valores selecionados e conteúdo de campos multilinha.
+
+### Verificações
+
+- Chave estrangeira confirmada contra `auth.users(id) ON DELETE SET NULL`.
+- Quatro policies e dois gatilhos confirmados diretamente no Supabase.
+- Funções internas confirmadas sem permissão de execução para `authenticated`.
+- Advisor de segurança permaneceu sem novos alertas.
+- GitHub Actions aprovou 31 contratos automatizados.
 - O painel consolida código, UUID, SHA-256, status, empresa, tipo, versão atual e
   data de emissão.
 - A linha do tempo carrega todas as versões permitidas pela RLS, ordenadas da mais
