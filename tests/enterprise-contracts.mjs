@@ -134,7 +134,7 @@ const migrationNames = (await readdir(migrationDir))
   .sort();
 
 contract("migrations são sequenciais e completas", () => {
-  assert.equal(migrationNames.length, 18, "esperadas exatamente 18 migrations");
+  assert.equal(migrationNames.length, 19, "esperadas exatamente 19 migrations");
   migrationNames.forEach((name, index) => {
     const expected = String(index + 1).padStart(3, "0");
     assert.ok(name.startsWith(`${expected}_`), `sequência inválida em ${name}`);
@@ -358,6 +358,23 @@ contract("central de auditoria é filtrável, paginada e somente leitura", () =>
     "mudarPaginaAuditoria",
     "view === 'audit'",
     "Rastreabilidade imutável",
+  ]);
+});
+
+contract("operações principais geram auditoria no banco", () => {
+  includesAll(migrations, [
+    "private.auditar_empresa_operacao",
+    "create trigger auditar_empresa_operacao",
+    "'EMPRESA_CRIADA'",
+    "'EMPRESA_ATUALIZADA'",
+    "'EMPRESA_ARQUIVADA'",
+    "'EMPRESA_RESTAURADA'",
+    "private.auditar_documento_operacao",
+    "create trigger auditar_documento_operacao",
+    "'DOCUMENTO_EMITIDO'",
+    "'DOCUMENTO_STATUS_ALTERADO'",
+    "revoke all on function private.auditar_empresa_operacao",
+    "revoke all on function private.auditar_documento_operacao",
   ]);
 });
 
