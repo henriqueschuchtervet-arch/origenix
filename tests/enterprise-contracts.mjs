@@ -134,7 +134,7 @@ const migrationNames = (await readdir(migrationDir))
   .sort();
 
 contract("migrations são sequenciais e completas", () => {
-  assert.equal(migrationNames.length, 20, "esperadas exatamente 20 migrations");
+  assert.equal(migrationNames.length, 21, "esperadas exatamente 21 migrations");
   migrationNames.forEach((name, index) => {
     const expected = String(index + 1).padStart(3, "0");
     assert.ok(name.startsWith(`${expected}_`), `sequência inválida em ${name}`);
@@ -400,6 +400,42 @@ contract("exportação da auditoria é limitada, rastreável e imutável", () =>
     "Download cancelado.",
     "URL.revokeObjectURL",
     "setButtonLoading",
+  ]);
+});
+
+contract("tarefas possuem prazos, prioridades e índices operacionais", () => {
+  includesAll(migrations, [
+    "add column if not exists prioridade",
+    "add column if not exists prazo",
+    "add column if not exists concluida_em",
+    "tarefas_prioridade_check",
+    "idx_tarefas_empresa_status_prazo",
+    "idx_tarefas_responsavel_status_prazo",
+  ]);
+});
+
+contract("notificações usam dados reais e leitura isolada por usuário", () => {
+  includesAll(migrations, [
+    "create table if not exists public.notificacao_leituras",
+    "references auth.users(id)",
+    "unique (usuario_id, tipo, referencia_id)",
+    "notificacao_leituras_select",
+    "notificacao_leituras_insert",
+    "notificacao_leituras_update",
+    "grant select, insert, update on table public.notificacao_leituras",
+  ]);
+  includesAll(files["origenix-sistema-login.html"], [
+    "id=\"tab-notificacoes\"",
+    "data-tab=\"notificacoes\"",
+    "id=\"notificationTrigger\"",
+    "async function carregarNotificacoes",
+    "from('tarefas')",
+    ".in('status',['em_revisao','gerado'])",
+    "function classificarTarefa",
+    "async function marcarNotificacaoLida",
+    "from('notificacao_leituras').upsert",
+    "async function abrirDocumentoNotificacao",
+    "view === 'notifications'",
   ]);
 });
 
