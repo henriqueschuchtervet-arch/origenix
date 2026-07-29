@@ -100,3 +100,18 @@ restrição de permissões do navegador, isolamento de contexto e HSTS.
 
 Qualquer nova integração externa deve ser adicionada à Content Security Policy de
 forma explícita e acompanhada por atualização dos contratos automatizados.
+
+## Dependências externas
+
+O cliente web utiliza `@supabase/supabase-js` `2.111.0`, carregado pelo bundle UMD
+versionado `dist/umd/supabase.js`. Todas as páginas devem usar a mesma versão exata.
+
+Ao atualizar a dependência:
+
+1. confirmar uma release estável e assinada no repositório oficial;
+2. verificar proveniência e integridade do pacote publicado no registro npm;
+3. atualizar simultaneamente todas as páginas e os contratos enterprise;
+4. validar autenticação, recuperação, emissão, PACs e formulário público no preview.
+
+Não use o hash do tarball npm como `integrity` do bundle CDN: são artefatos
+diferentes. Um SRI só pode ser adicionado após calcular o hash do arquivo UMD exato.
