@@ -294,6 +294,25 @@ modifica dados e mantém a integração atual com Supabase, GitHub e Netlify.
 ## Dossiê e histórico documental
 
 - Cada documento da biblioteca ganhou a ação `Abrir dossiê`.
+
+## Ciclo 13 — anexos documentais privados
+
+- Criado o bucket privado `documentos`, limitado a 10 MB e aos formatos documentais aprovados.
+- O caminho de cada objeto começa pelo UUID do documento, permitindo que as políticas de Storage reutilizem o mesmo controle de acesso do dossiê.
+- Leitura, envio e exclusão foram protegidos por políticas RLS; gravações exigem perfil Administrador, RT ou Consultor.
+- O dossiê agora envia anexos com estado de carregamento, valida tamanho e formato antes do tráfego e exibe mensagens claras de sucesso ou erro.
+- Downloads usam links assinados com validade de cinco minutos. URLs HTTPS legadas permanecem compatíveis.
+- Se o registro do anexo falhar depois do upload, o objeto é removido automaticamente para impedir arquivos órfãos.
+- A suíte passou a cobrir 20 contratos de segurança, navegação e operação.
+
+### Verificações
+
+- Bucket confirmado como privado, com limite de `10485760` bytes.
+- Políticas `documentos_storage_select`, `documentos_storage_insert` e `documentos_storage_delete` confirmadas no banco.
+- GitHub Actions aprovado após a publicação.
+- Prévia do Netlify respondeu normalmente na rota da biblioteca documental.
+- Advisor de segurança: nenhum alerta novo introduzido; permanece apenas a proteção contra senhas vazadas, dependente de configuração do plano.
+- Advisor de desempenho: somente índices ainda não utilizados, classificados como informativos.
 - O painel consolida código, UUID, SHA-256, status, empresa, tipo, versão atual e
   data de emissão.
 - A linha do tempo carrega todas as versões permitidas pela RLS, ordenadas da mais
