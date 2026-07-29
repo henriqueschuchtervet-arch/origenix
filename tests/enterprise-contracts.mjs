@@ -241,6 +241,20 @@ contract("atalhos abrem o fluxo solicitado", () => {
   ]);
 });
 
+contract("biblioteca documental é pesquisável e paginada", () => {
+  includesAll(files["origenix-sistema-login.html"], [
+    "id=\"tab-documentos\"",
+    "DOCUMENT_PAGE_SIZE = 20",
+    "DOCUMENT_FIELDS",
+    "empresas(nome)",
+    "async function renderDocumentList",
+    "agendarBuscaDocumentos",
+    "mudarPaginaDocumentos",
+    "copiarCodigoDocumento",
+    "abrirEmpresaDoDocumento",
+  ]);
+});
+
 const failures = results.filter((result) => !result.ok);
 for (const result of results) {
   console.log(`${result.ok ? "✓" : "✗"} ${result.name}${result.error ? ` — ${result.error}` : ""}`);
