@@ -33,6 +33,8 @@ const requiredFiles = [
   "origenix-dashboard.js",
   "origenix-emissao-v3.html",
   "origenix-sistema-login.html",
+  "origenix-system.css",
+  "origenix-system.js",
   "origenix-pacs.html",
   "origenix-pacs.css",
   "origenix-pacs.js",
@@ -50,6 +52,12 @@ const files = Object.fromEntries(await Promise.all(
   requiredFiles.map(async (path) => [path, await source(path)]),
 ));
 
+const systemSource = [
+  files["origenix-sistema-login.html"],
+  files["origenix-system.css"],
+  files["origenix-system.js"],
+].join("\n");
+
 contract("arquivos essenciais existem", () => {
   requiredFiles.forEach((path) => assert.ok(files[path].length > 0, `${path} está vazio`));
 });
@@ -57,8 +65,28 @@ contract("arquivos essenciais existem", () => {
 contract("JavaScript compartilhado possui sintaxe válida", () => {
   new vm.Script(files["ui-enhancements.js"], { filename: "ui-enhancements.js" });
   new vm.Script(files["origenix-dashboard.js"], { filename: "origenix-dashboard.js" });
+  new vm.Script(files["origenix-system.js"], { filename: "origenix-system.js" });
   new vm.Script(files["recuperar-senha.js"], { filename: "recuperar-senha.js" });
   new vm.Script(files["origenix-pacs.js"], { filename: "origenix-pacs.js" });
+});
+
+contract("central operacional usa módulos externos cacheáveis", () => {
+  const html = files["origenix-sistema-login.html"];
+  includesAll(html, [
+    "origenix-system.css?v=1.0",
+    "origenix-system.js?v=1.0",
+    "origenix-v4.css?v=4.5",
+    "ui-enhancements.js?v=4.5",
+  ]);
+  assert.ok(!/<style\b|<script(?![^>]*\bsrc=)/i.test(html), "central operacional ainda possui blocos inline");
+  includesAll(files["origenix-system.js"], [
+    "initAuth()", "salvarCliente", "loadDocuments",
+    "renderNotifications", "renderTaskRows", "loadAudit",
+    "abrirDossieDocumento", "Promise.all",
+  ]);
+  includesAll(files["origenix-system.css"], [
+    ":focus-visible", "@media", "prefers-reduced-motion",
+  ]);
 });
 
 contract("JavaScript inline possui sintaxe válida", () => {
@@ -85,7 +113,7 @@ contract("recuperação de senha está completa", () => {
 });
 
 contract("emissão preserva numeração e versionamento", () => {
-  includesAll(files["origenix-sistema-login.html"], [
+  includesAll(systemSource, [
     "proximo_codigo_documento",
     "documento_versoes",
     "hash_sha256",
@@ -94,13 +122,13 @@ contract("emissão preserva numeração e versionamento", () => {
 });
 
 contract("gestão de empresas não executa exclusão física", () => {
-  const system = files["origenix-sistema-login.html"];
+  const system = systemSource;
   assert.ok(!system.includes(".from('empresas').delete("), "exclusão física de empresas detectada");
   includesAll(system, ["arquivado_em", "alterarSituacaoCliente", "ativo: restaurar"]);
 });
 
 contract("listagem de empresas é paginada no servidor", () => {
-  includesAll(files["origenix-sistema-login.html"], [
+  includesAll(systemSource, [
     "CLIENT_PAGE_SIZE = 20",
     ".range(from, to)",
     "{ count: 'exact' }",
@@ -110,7 +138,7 @@ contract("listagem de empresas é paginada no servidor", () => {
 });
 
 contract("visão 360 respeita o escopo da empresa", () => {
-  includesAll(files["origenix-sistema-login.html"], [
+  includesAll(systemSource, [
     "abrirDetalhesCliente",
     "countQuery('documentos')",
     "countQuery('empresa_pacs')",
@@ -228,6 +256,7 @@ contract("botões e links internos possuem comportamento real", () => {
     const html = files[path];
     const pageScript = ({
       "origenix-dashboard-v3.html": files["origenix-dashboard.js"],
+      "origenix-sistema-login.html": files["origenix-system.js"],
       "origenix-pacs.html": files["origenix-pacs.js"],
       "recuperar-senha.html": files["recuperar-senha.js"],
     })[path] || "";
@@ -284,7 +313,7 @@ contract("atalhos abrem o fluxo solicitado", () => {
     "origenix-sistema-login.html?view=clients",
     "origenix-sistema-login.html?view=documents",
   ]);
-  includesAll(files["origenix-sistema-login.html"], [
+  includesAll(systemSource, [
     "async function aplicarRotaInicial",
     "get('view') || 'clients'",
     "view === 'new'",
@@ -293,7 +322,7 @@ contract("atalhos abrem o fluxo solicitado", () => {
 });
 
 contract("biblioteca documental é pesquisável e paginada", () => {
-  includesAll(files["origenix-sistema-login.html"], [
+  includesAll(systemSource, [
     "id=\"tab-documentos\"",
     "DOCUMENT_PAGE_SIZE = 20",
     "DOCUMENT_FIELDS",
@@ -307,7 +336,7 @@ contract("biblioteca documental é pesquisável e paginada", () => {
 });
 
 contract("dossiê documental exibe versões e anexos com segurança", () => {
-  includesAll(files["origenix-sistema-login.html"], [
+  includesAll(systemSource, [
     "id=\"documentDossierOverlay\"",
     "async function abrirDossieDocumento",
     "from('documento_versoes')",
@@ -335,7 +364,7 @@ contract("storage documental permanece privado e limitado por RLS", () => {
 });
 
 contract("upload documental valida, assina e desfaz falhas parciais", () => {
-  includesAll(files["origenix-sistema-login.html"], [
+  includesAll(systemSource, [
     "createSignedUrl(attachment.url, 300)",
     "async function enviarAnexoDocumento",
     "file.size > 10485760",
@@ -359,7 +388,7 @@ contract("exclusão de anexos é autorizada e auditada", () => {
     "alter function public.excluir_anexo_auditado(uuid)",
     "security invoker",
   ]);
-  includesAll(files["origenix-sistema-login.html"], [
+  includesAll(systemSource, [
     "async function excluirAnexoDocumento",
     "title:'Excluir anexo?'",
     "danger:true",
@@ -395,7 +424,7 @@ contract("auditoria usa identidade real e índices de consulta", () => {
 });
 
 contract("central de auditoria é filtrável, paginada e somente leitura", () => {
-  includesAll(files["origenix-sistema-login.html"], [
+  includesAll(systemSource, [
     "id=\"tab-auditoria\"",
     "data-tab=\"auditoria\"",
     "AUDIT_PAGE_SIZE = 25",
@@ -441,7 +470,7 @@ contract("exportação da auditoria é limitada, rastreável e imutável", () =>
     "'AUDITORIA_EXPORTADA'",
     "revoke all on function private.auditar_exportacao",
   ]);
-  includesAll(files["origenix-sistema-login.html"], [
+  includesAll(systemSource, [
     "id=\"auditExportButton\"",
     "async function exportarAuditoriaCSV",
     "function valorSeguroCSV",
@@ -475,7 +504,7 @@ contract("notificações usam dados reais e leitura isolada por usuário", () =>
     "notificacao_leituras_update",
     "grant select, insert, update on table public.notificacao_leituras",
   ]);
-  includesAll(files["origenix-sistema-login.html"], [
+  includesAll(systemSource, [
     "id=\"tab-notificacoes\"",
     "data-tab=\"notificacoes\"",
     "id=\"notificationTrigger\"",
@@ -507,7 +536,7 @@ contract("tarefas usam identidade real, papéis e auditoria interna", () => {
 });
 
 contract("gestão de tarefas possui CRUD, agenda e feedback", () => {
-  includesAll(files["origenix-sistema-login.html"], [
+  includesAll(systemSource, [
     "id=\"tab-tarefas\"",
     "data-tab=\"tarefas\"",
     "TASK_PAGE_SIZE = 25",
@@ -575,10 +604,10 @@ contract("autenticação compartilha superfície visual sem sobrepor abas", () =
     ".panel{background:var(--graphite)",
     ".login-card.panel",
   ]);
-  includesAll(files["origenix-sistema-login.html"], [
+  includesAll(systemSource, [
     "data-ox-v4",
     "class=\"login-card panel\"",
-    "ui-enhancements.js?v=4.4",
+    "ui-enhancements.js?v=4.5",
   ]);
   includesAll(files["ui-enhancements.js"], [
     "const loginButton = $(\"#btnAuth\")",
