@@ -623,6 +623,32 @@ async function handleLogout(){
   if(error) console.error(error);
 }
 
+async function aplicarRotaInicial(){
+  const view = new URLSearchParams(location.search).get('view') || 'clients';
+  if(view === 'new'){
+    await renderClientList();
+    novoCadastro();
+    return;
+  }
+  if(view === 'documents'){
+    switchTab('documentos');
+    return;
+  }
+  if(view === 'audit'){
+    switchTab('auditoria');
+    return;
+  }
+  if(view === 'notifications'){
+    switchTab('notificacoes');
+    return;
+  }
+  if(view === 'tasks'){
+    switchTab('tarefas');
+    return;
+  }
+  switchTab('clientes');
+}
+
 async function onAuthenticated(user){
   if(!user) return;
   const sameUser = currentUser && currentUser.id === user.id;
@@ -1983,3 +2009,4 @@ initAuth();
 <script src="ui-enhancements.js?v=4.4"></script>
 </body>
 </html>
+
