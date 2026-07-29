@@ -458,6 +458,35 @@ modifica dados e mantém a integração atual com Supabase, GitHub e Netlify.
 - Funções internas confirmadas sem permissão de execução para `authenticated`.
 - Advisor de segurança permaneceu sem novos alertas.
 - GitHub Actions aprovou 31 contratos automatizados.
+
+## Ciclo 20 — Dashboard executivo operacional
+
+- Indicadores de leads foram substituídos por tarefas vencidas e documentos em revisão.
+- Os KPIs críticos são clicáveis e levam diretamente ao fluxo correspondente.
+- Adicionada agenda dos próximos sete dias com prazo, empresa e destaque de criticidade.
+- Adicionado painel consolidado de tarefas vencidas e documentos aguardando revisão.
+- O sino superior abre a Central de Notificações e desaparece quando não há alertas.
+- Contadores laterais exibem clientes, tarefas e alertas acessíveis ao usuário.
+- Atalhos rápidos incluem Tarefas e Notificações.
+
+### Navegação corrigida
+
+- Todos os itens da barra lateral passaram a ser links reais.
+- Itens provisórios sem módulo funcional foram removidos: Projetos genéricos, Licenças, Faturamento, IA Interna e Configurações.
+- Permanecem apenas Dashboard, Clientes, Documentos, Emissão, Tarefas, Notificações, Auditoria e PACs/APPCC.
+
+### Desempenho
+
+- Contagens e listas são obtidas pelas mesmas consultas paginadas, evitando chamadas duplicadas.
+- Agenda, vencimentos e revisões usam consultas limitadas e filtros executados pelo banco.
+- Dados continuam isolados pelas RLS das tabelas de origem.
+
+### Verificações
+
+- JavaScript validado sem erros de sintaxe.
+- GitHub Actions aprovou 32 contratos automatizados.
+- Prévia do dashboard respondeu no Netlify.
+- Nenhum item de navegação inerte permaneceu no HTML publicado.
 - O painel consolida código, UUID, SHA-256, status, empresa, tipo, versão atual e
   data de emissão.
 - A linha do tempo carrega todas as versões permitidas pela RLS, ordenadas da mais
