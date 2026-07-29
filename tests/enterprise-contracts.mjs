@@ -134,7 +134,7 @@ const migrationNames = (await readdir(migrationDir))
   .sort();
 
 contract("migrations são sequenciais e completas", () => {
-  assert.equal(migrationNames.length, 13, "esperadas exatamente 13 migrations");
+  assert.equal(migrationNames.length, 14, "esperadas exatamente 14 migrations");
   migrationNames.forEach((name, index) => {
     const expected = String(index + 1).padStart(3, "0");
     assert.ok(name.startsWith(`${expected}_`), `sequência inválida em ${name}`);
@@ -294,6 +294,33 @@ contract("upload documental valida, assina e desfaz falhas parciais", () => {
     ".storage.from('documentos').remove([objectPath])",
     "setButtonLoading",
     "documentAttachmentInput",
+  ]);
+});
+
+contract("exclusão de anexos é autorizada e auditada", () => {
+  includesAll(migrations, [
+    "public.excluir_anexo_auditado",
+    "Perfil sem permissão para excluir anexos.",
+    "private.pode_acessar_documento",
+    "'ANEXO_EXCLUIDO'",
+    "jsonb_build_object",
+    "grant execute on function public.excluir_anexo_auditado",
+  ]);
+  includesAll(files["origenix-sistema-login.html"], [
+    "async function excluirAnexoDocumento",
+    "title:'Excluir anexo?'",
+    "danger:true",
+    "objectPath.startsWith(documentId + '/')",
+    "supa.rpc('excluir_anexo_auditado'",
+    "Anexo excluído e ação registrada.",
+  ]);
+});
+
+contract("trilha de auditoria é imutável para usuários da aplicação", () => {
+  includesAll(migrations, [
+    "drop policy if exists auditorias_update",
+    "drop policy if exists auditorias_delete",
+    "revoke update, delete on table public.auditorias from authenticated",
   ]);
 });
 
