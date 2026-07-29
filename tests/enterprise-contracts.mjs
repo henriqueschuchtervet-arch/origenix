@@ -33,6 +33,8 @@ const requiredFiles = [
   "origenix-sistema-login.html",
   "origenix-pacs.html",
   "recuperar-senha.html",
+  "recuperar-senha.css",
+  "recuperar-senha.js",
   "ui-enhancements.js",
   "origenix-supabase.js",
   "origenix-auth.js",
@@ -67,10 +69,21 @@ contract("JavaScript inline possui sintaxe válida", () => {
 
 contract("recuperação de senha está completa", () => {
   includesAll(files["recuperar-senha.html"], [
+    "id=\"requestForm\"",
+    "id=\"updateForm\"",
+    "recuperar-senha.css?v=1.0",
+    "recuperar-senha.js?v=1.0",
+    "id=\"loginLink\"",
+  ]);
+  includesAll(files["recuperar-senha.js"], [
     "resetPasswordForEmail",
     "PASSWORD_RECOVERY",
     "updateUser",
+    "aria-busy",
+    "finally",
+    "loginLink.focus()",
   ]);
+  new vm.Script(files["recuperar-senha.js"], { filename: "recuperar-senha.js" });
 });
 
 contract("emissão preserva numeração e versionamento", () => {
@@ -622,6 +635,30 @@ contract("cliente Supabase usa versão exata e requisição privada", () => {
       `${path} ainda usa versão flutuante do Supabase`,
     );
   });
+});
+
+contract("recuperação opera sem código inline e com CSP estrita", () => {
+  const html = files["recuperar-senha.html"];
+  assert.ok(!/<style\b/i.test(html), "recuperação ainda possui CSS inline");
+  assert.ok(!/<script(?![^>]*\bsrc=)/i.test(html), "recuperação ainda possui JavaScript inline");
+  assert.ok(!/\son[a-z]+=/i.test(html), "recuperação ainda possui handler inline");
+  assert.ok(!/\sstyle=/i.test(html), "recuperação ainda possui atributo style");
+  includesAll(files["recuperar-senha.css"], [
+    "button:hover:not(:disabled)",
+    ":focus-visible",
+    "prefers-reduced-motion",
+    ".login-link",
+  ]);
+  const recoveryHeaders = files["_headers"]
+    .split("/recuperar-senha.html")[1]
+    .split("/recuperar-senha.css")[0];
+  includesAll(recoveryHeaders, [
+    "script-src-attr 'none'",
+    "style-src-attr 'none'",
+    "frame-src 'none'",
+    "worker-src 'none'",
+  ]);
+  assert.ok(!recoveryHeaders.includes("unsafe-inline"), "CSP da recuperação ainda aceita inline");
 });
 
 const failures = results.filter((result) => !result.ok);
