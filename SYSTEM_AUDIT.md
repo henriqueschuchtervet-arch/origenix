@@ -141,3 +141,24 @@ modifica dados e mantém a integração atual com Supabase, GitHub e Netlify.
   preservados.
 - Novo SHA do arquivo confirmado na branch de trabalho.
 - Tela de autenticação carregada com sucesso no deploy de preview da Netlify.
+
+## Bloqueio da tabela legada de usuários
+
+- A tabela `public.usuarios` foi confirmada vazia, sem policies e sem grants para
+  `anon` ou `authenticated`.
+- Nenhum consumidor da tabela foi encontrado no frontend; a identidade ativa usa
+  `auth.users`, `profiles` e `empresa_membros`.
+- A migration `012_usuarios_legacy_lockdown.sql` mantém a tabela por
+  compatibilidade, revoga privilégios e adiciona uma policy restritiva que nega
+  leitura e escrita.
+- A coluna legada `senha` foi documentada como proibida para autenticação; nenhuma
+  senha deve ser armazenada fora do Supabase Auth.
+
+### Validações deste ciclo
+
+- Migration aplicada com sucesso no Supabase.
+- Policy `usuarios_legacy_deny_all` confirmada como `RESTRICTIVE`, para todas as
+  operações, com `USING (false)` e `WITH CHECK (false)`.
+- Security Advisor executado após o DDL: o alerta de RLS sem policy foi eliminado.
+- Permanece apenas o aviso de proteção contra senhas vazadas, uma configuração
+  administrativa do Supabase Auth.
