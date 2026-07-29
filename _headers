@@ -33,3 +33,9 @@
 
 /origenix-dashboard.css
   Cache-Control: public, max-age=3600, must-revalidate
+
+/origenix-system.js
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/origenix-system.css
+  Cache-Control: public, max-age=3600, must-revalidate
