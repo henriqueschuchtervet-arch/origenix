@@ -134,7 +134,7 @@ const migrationNames = (await readdir(migrationDir))
   .sort();
 
 contract("migrations são sequenciais e completas", () => {
-  assert.equal(migrationNames.length, 15, "esperadas exatamente 15 migrations");
+  assert.equal(migrationNames.length, 16, "esperadas exatamente 16 migrations");
   migrationNames.forEach((name, index) => {
     const expected = String(index + 1).padStart(3, "0");
     assert.ok(name.startsWith(`${expected}_`), `sequência inválida em ${name}`);
@@ -305,6 +305,8 @@ contract("exclusão de anexos é autorizada e auditada", () => {
     "'ANEXO_EXCLUIDO'",
     "jsonb_build_object",
     "grant execute on function public.excluir_anexo_auditado",
+    "alter function public.excluir_anexo_auditado(uuid)",
+    "security invoker",
   ]);
   includesAll(files["origenix-sistema-login.html"], [
     "async function excluirAnexoDocumento",
