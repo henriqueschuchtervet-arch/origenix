@@ -32,6 +32,8 @@ const requiredFiles = [
   "origenix-dashboard.css",
   "origenix-dashboard.js",
   "origenix-emissao-v3.html",
+  "origenix-emissao.css",
+  "origenix-emissao.js",
   "origenix-sistema-login.html",
   "origenix-system.css",
   "origenix-system.js",
@@ -65,6 +67,7 @@ contract("arquivos essenciais existem", () => {
 contract("JavaScript compartilhado possui sintaxe válida", () => {
   new vm.Script(files["ui-enhancements.js"], { filename: "ui-enhancements.js" });
   new vm.Script(files["origenix-dashboard.js"], { filename: "origenix-dashboard.js" });
+  new vm.Script(files["origenix-emissao.js"], { filename: "origenix-emissao.js" });
   new vm.Script(files["origenix-system.js"], { filename: "origenix-system.js" });
   new vm.Script(files["recuperar-senha.js"], { filename: "recuperar-senha.js" });
   new vm.Script(files["origenix-pacs.js"], { filename: "origenix-pacs.js" });
@@ -96,6 +99,32 @@ contract("central operacional usa módulos externos cacheáveis", () => {
   const systemHeaders = files["_headers"].split("/origenix-sistema-login.html")[1]?.split("\n\n")[0] || "";
   includesAll(systemHeaders, ["script-src-attr 'none'", "style-src-attr 'none'", "frame-src 'none'"]);
   assert.ok(!systemHeaders.includes("'unsafe-inline'"), "CSP da central permite conteúdo inline");
+});
+
+contract("emissão e assinatura usam módulos seguros e acessíveis", () => {
+  const html = files["origenix-emissao-v3.html"];
+  const script = files["origenix-emissao.js"];
+  includesAll(html, [
+    "origenix-v4.css?v=4.5", "origenix-emissao.css?v=1.0",
+    "ui-enhancements.js?v=4.5", "origenix-emissao.js?v=1.0",
+    "data-action=\"sign-selected\"",
+  ]);
+  assert.ok(!/<style\b|<script(?![^>]*\bsrc=)|\sstyle=|\son\w+=/i.test(html), "emissão ainda possui código inline");
+  includesAll(script, [
+    "assinarSelecionados", "canSignDocuments",
+    ".from('documentos')", "status: 'assinado'",
+    "openFormDialog", "setButtonLoading",
+    "handleEmissionAction", "data-action=\"toggle-document\"",
+    "aria-pressed",
+  ]);
+  assert.ok(!/\.style\.|\sstyle=|\son(?:click|change|input)=/.test(script), "emissão ainda cria código inline");
+  includesAll(files["origenix-emissao.css"], [
+    ":focus-visible", ".is-hidden", ".doc-row",
+    "prefers-reduced-motion",
+  ]);
+  const emissionHeaders = files["_headers"].split("/origenix-emissao-v3.html")[1]?.split("\n\n")[0] || "";
+  includesAll(emissionHeaders, ["script-src-attr 'none'", "style-src-attr 'none'", "frame-src 'none'"]);
+  assert.ok(!emissionHeaders.includes("'unsafe-inline'"), "CSP da emissão permite conteúdo inline");
 });
 
 contract("JavaScript inline possui sintaxe válida", () => {
@@ -265,6 +294,7 @@ contract("botões e links internos possuem comportamento real", () => {
     const html = files[path];
     const pageScript = ({
       "origenix-dashboard-v3.html": files["origenix-dashboard.js"],
+      "origenix-emissao-v3.html": files["origenix-emissao.js"],
       "origenix-sistema-login.html": files["origenix-system.js"],
       "origenix-pacs.html": files["origenix-pacs.js"],
       "recuperar-senha.html": files["recuperar-senha.js"],
