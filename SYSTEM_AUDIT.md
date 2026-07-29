@@ -266,3 +266,27 @@ modifica dados e mantém a integração atual com Supabase, GitHub e Netlify.
   cadastro é aberto somente quando solicitado.
 - O CI final aprovou 16 de 16 contratos em quatro segundos e o deploy da Netlify
   foi concluído com sucesso.
+
+## Biblioteca documental enterprise
+
+- O sistema ganhou uma terceira área operacional dedicada a documentos.
+- A biblioteca consulta apenas os campos necessários e usa paginação server-side
+  de 20 registros.
+- Pesquisa por título, tipo e código possui debounce e proteção contra respostas
+  fora de ordem.
+- Filtros de status cobrem documentos gerados, em revisão, assinados e arquivados.
+- Cada linha apresenta estabelecimento, código, versão, data e status.
+- O usuário pode copiar o código, abrir a visão 360° da empresa ou acessar a
+  Central de Assinaturas.
+- A relação `documentos_empresa_id_fkey` foi confirmada antes de usar a seleção
+  relacional `empresas(nome)`.
+- O atalho `Documentos` passa a abrir a biblioteca real, em vez de redirecionar
+  para a lista de clientes.
+
+### Validações deste ciclo
+
+- JavaScript inline analisado sem erros de sintaxe.
+- Numeração, versionamento, paginação de empresas, arquivamento e visão 360°
+  preservados.
+- O CI aprovou 17 de 17 contratos em quatro segundos.
+- O deploy da Netlify foi concluído com sucesso.
