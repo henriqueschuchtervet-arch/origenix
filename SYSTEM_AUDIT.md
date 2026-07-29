@@ -162,3 +162,34 @@ modifica dados e mantém a integração atual com Supabase, GitHub e Netlify.
 - Security Advisor executado após o DDL: o alerta de RLS sem policy foi eliminado.
 - Permanece apenas o aviso de proteção contra senhas vazadas, uma configuração
   administrativa do Supabase Auth.
+
+## Visão 360° do estabelecimento
+
+- Cada linha da gestão ganhou a ação `Ver detalhes`, que abre um painel lateral
+  sem retirar o usuário do contexto da listagem.
+- O painel consolida dados cadastrais, responsável técnico, inspeção, capacidade
+  e área construída.
+- Quatro consultas leves exibem as contagens de documentos, PACs, tarefas e
+  auditorias, sempre filtradas por `empresa_id` e protegidas pelas RLS existentes.
+- Os cinco documentos mais recentes são exibidos com código, versão e status.
+- Ações de edição, emissão e acesso aos PACs permanecem disponíveis no próprio
+  painel conforme o papel do usuário.
+- O painel possui diálogo semântico, fechamento por `Esc`, clique no fundo,
+  restauração de foco e adaptação para telas pequenas.
+
+### Validações deste ciclo
+
+- JavaScript inline analisado sem erros de sintaxe.
+- Paginação, numeração automática, versionamento e arquivamento preservados.
+- Novo arquivo publicado e SHA confirmado na branch.
+- Deploy Preview da Netlify concluído com sucesso para o commit da visão 360°.
+
+## Prontidão do pull request
+
+- A branch foi comparada com `main`: está 53 commits à frente e zero atrás.
+- Não há conflito de conteúdo; o bloqueio de merge era o estado de rascunho.
+- As três verificações da Netlify foram concluídas sem falhas.
+- Título, descrição, implantação e checklist do PR foram atualizados para refletir
+  o estado real do sistema.
+- O PR permanece como rascunho até haver evidência dos testes autenticados para
+  Administrador, RT, Cliente e Consultor.
