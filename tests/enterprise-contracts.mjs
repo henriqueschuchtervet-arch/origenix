@@ -80,7 +80,7 @@ contract("central operacional usa módulos externos cacheáveis", () => {
   ]);
   assert.ok(!/<style\b|<script(?![^>]*\bsrc=)/i.test(html), "central operacional ainda possui blocos inline");
   includesAll(files["origenix-system.js"], [
-    "initAuth()", "salvarCliente", "loadDocuments",
+    "initAuth()", "salvarCliente", "getDocuments",
     "renderNotifications", "renderTaskRows", "loadAudit",
     "abrirDossieDocumento", "Promise.all",
   ]);
