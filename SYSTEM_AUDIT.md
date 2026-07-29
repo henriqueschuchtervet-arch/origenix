@@ -658,3 +658,35 @@ modifica dados e mantém a integração atual com Supabase, GitHub e Netlify.
 - Autenticação continuou validando mensagem, foco e botão.
 - Recuperação de senha permaneceu disponível.
 - Formulário de diagnóstico continuou abrindo normalmente.
+
+## Ciclo 26 — recuperação sem código inline
+
+### Diagnóstico
+
+- A recuperação continha um bloco CSS e um bloco JavaScript dentro do HTML.
+- A CSP global ainda precisava de `unsafe-inline` para páginas legadas.
+
+### Implementação
+
+- CSS extraído para `recuperar-senha.css`.
+- JavaScript extraído para `recuperar-senha.js`.
+- O HTML não possui scripts inline, blocos style, handlers inline ou atributos style.
+- A página recebeu CSP específica com `script-src-attr 'none'` e `style-src-attr 'none'`.
+- A CSP específica não contém `unsafe-inline` e bloqueia frames e workers.
+- CSS e JavaScript externos receberam cache com revalidação.
+
+### Experiência e robustez
+
+- Botões possuem hover, active, focus-visible, disabled e transições reduzíveis.
+- Loading usa `aria-busy` e restaura o texto no `finally`.
+- E-mail é normalizado antes da solicitação.
+- Falhas de rede não deixam botões travados.
+- Senhas divergentes direcionam o foco para a confirmação.
+- Após atualizar a senha, um link visível direciona ao login.
+
+### Resultado
+
+- HTML reduzido de 4.854 para 1.723 caracteres.
+- 38 contratos enterprise aprovados no GitHub Actions.
+- Preview carregou somente CSS e JavaScript externos da recuperação.
+- Nenhuma solicitação real de recuperação foi disparada durante a validação.
