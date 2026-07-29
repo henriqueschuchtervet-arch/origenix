@@ -76,3 +76,18 @@ Antes de aplicar:
 - Sprint 4: auditorias, tarefas, agenda e documentos técnicos.
 - Sprint 5: IA, OCR, uploads e relatórios inteligentes.
 
+## Testes automatizados
+
+O projeto possui contratos automatizados sem dependências externas:
+
+```bash
+npm test
+```
+
+Os testes validam sintaxe, autenticação, recuperação de senha, RLS versionada,
+emissão, versionamento, arquivamento reversível, paginação, visão consolidada,
+PACs, acessibilidade e sequência de migrations.
+
+O workflow `Enterprise contracts` executa automaticamente na branch principal,
+na branch de desenvolvimento e nos pull requests. Um PR não deve ser liberado
+enquanto essa verificação estiver falhando.
