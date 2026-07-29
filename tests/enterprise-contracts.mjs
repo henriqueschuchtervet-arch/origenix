@@ -29,6 +29,8 @@ function includesAll(text, values) {
 const requiredFiles = [
   "index.html",
   "origenix-dashboard-v3.html",
+  "origenix-dashboard.css",
+  "origenix-dashboard.js",
   "origenix-emissao-v3.html",
   "origenix-sistema-login.html",
   "origenix-pacs.html",
@@ -52,6 +54,7 @@ contract("arquivos essenciais existem", () => {
 
 contract("JavaScript compartilhado possui sintaxe válida", () => {
   new vm.Script(files["ui-enhancements.js"], { filename: "ui-enhancements.js" });
+  new vm.Script(files["origenix-dashboard.js"], { filename: "origenix-dashboard.js" });
   new vm.Script(files["origenix-pacs.js"], { filename: "origenix-pacs.js" });
 });
 
@@ -518,24 +521,30 @@ contract("diálogo compartilhado preserva valores em edição", () => {
 });
 
 contract("dashboard executivo exibe prioridades e somente rotas funcionais", () => {
-  includesAll(files["origenix-dashboard-v3.html"], [
-    "id=\"kpiTarefasVencidas\"",
-    "id=\"kpiDocumentosRevisao\"",
-    "id=\"agendaList\"",
-    "id=\"criticalAlertsList\"",
+  const html = files["origenix-dashboard-v3.html"];
+  const script = files["origenix-dashboard.js"];
+  includesAll(html, [
+    "id=\"kpiTarefasVencidas\"", "id=\"kpiDocumentosRevisao\"",
+    "id=\"agendaList\"", "id=\"criticalAlertsList\"",
     "origenix-sistema-login.html?view=tasks",
     "origenix-sistema-login.html?view=notifications",
     "origenix-sistema-login.html?view=audit",
-    "async function loadDashboard",
-    "from('tarefas').select(taskFields",
-    ".eq('status','em_revisao')",
-    "function operationalRow",
-    "formatDashboardDeadline",
+    "origenix-dashboard.css?v=1.0", "origenix-dashboard.js?v=1.0",
+    "ui-enhancements.js?v=4.5",
   ]);
-  assert.ok(
-    !files["origenix-dashboard-v3.html"].includes("Faturamento"),
-    "dashboard ainda exibe módulo inerte de faturamento",
-  );
+  includesAll(script, [
+    "async function loadDashboard", "from('tarefas').select(taskFields",
+    ".eq('status','em_revisao')", "function operationalRow",
+    "formatDashboardDeadline", "Promise.all(requests)",
+    "setButtonLoading", "bindDashboardEvents",
+  ]);
+  assert.ok(!html.includes("Faturamento"), "dashboard ainda exibe módulo inerte de faturamento");
+  assert.ok(!/<style\b|<script(?![^>]*\bsrc=)|\sstyle=|\son\w+=/i.test(html), "dashboard ainda possui código inline");
+  assert.ok(!/\.style\.|\sstyle=/.test(script), "dashboard ainda cria estilos inline");
+  includesAll(files["origenix-dashboard.css"], [":focus-visible", "@media(max-width:620px)", "prefers-reduced-motion"]);
+  const dashboardHeaders = files["_headers"].split("/origenix-dashboard-v3.html")[1]?.split("\n\n")[0] || "";
+  includesAll(dashboardHeaders, ["script-src-attr 'none'", "style-src-attr 'none'", "frame-src 'none'"]);
+  assert.ok(!dashboardHeaders.includes("'unsafe-inline'"), "CSP do dashboard permite conteúdo inline");
   includesAll(files["ui-enhancements.js"], [
     "origenix-sistema-login.html?view=tasks",
     "origenix-sistema-login.html?view=notifications",
@@ -545,9 +554,13 @@ contract("dashboard executivo exibe prioridades e somente rotas funcionais", () 
 contract("autenticação compartilha superfície visual sem sobrepor abas", () => {
   includesAll(files["origenix-dashboard-v3.html"], [
     "data-ox-v4",
+    "class=\"login-card panel\"",
+    "origenix-dashboard.css?v=1.0",
+    "ui-enhancements.js?v=4.5",
+  ]);
+  includesAll(files["origenix-dashboard.css"], [
     ".panel{background:var(--graphite)",
     ".login-card.panel",
-    "ui-enhancements.js?v=4.4",
   ]);
   includesAll(files["origenix-sistema-login.html"], [
     "data-ox-v4",
