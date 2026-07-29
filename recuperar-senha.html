@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ORIGENIX — Recuperar senha</title>
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="origenix-supabase.js?v=1.0"></script>
   <style>
     :root { color-scheme: dark; --red:#d10000; --accent:#ff1a1a; --metal:#aaa; }
     * { box-sizing:border-box; }
@@ -55,9 +56,7 @@
 </main>
 
 <script>
-const SUPABASE_URL = 'https://kdlyjcaxopypqeitazan.supabase.co';
-const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_WPAmKMxTATKGybLe9FBs1Q_X417Hc5X';
-const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+const supa = window.OrigenixSupabase.createClient();
 const requestView = document.getElementById('requestView');
 const updateView = document.getElementById('updateView');
 const message = document.getElementById('message');
