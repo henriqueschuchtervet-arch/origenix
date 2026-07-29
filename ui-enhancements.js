@@ -4,6 +4,15 @@
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
   const isHome = /(^|\/)index\.html$/.test(location.pathname) || location.pathname === "/";
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  if (!$('link[data-ox-v4]')) {
+    const designSystem = document.createElement("link");
+    designSystem.rel = "stylesheet";
+    designSystem.href = "origenix-v4.css";
+    designSystem.dataset.oxV4 = "1";
+    document.head.appendChild(designSystem);
+  }
 
   const style = document.createElement("style");
   style.textContent = `
@@ -131,8 +140,8 @@
     $("#oxCommandSearch", overlay).addEventListener("input", renderCommandItems);
     $("#oxCommandSearch", overlay).addEventListener("keydown", (event) => {
       if (event.key === "Enter") {
-        const first = $(".ox-command-item", overlay);
-        if (first) first.click();
+        const selected = $('.ox-command-item[aria-selected="true"]', overlay);
+        if (selected) selected.click();
       }
     });
     renderCommandItems();
@@ -147,9 +156,20 @@
     );
     list.innerHTML = filtered.length
       ? filtered.map(([title, detail, href]) =>
-        `<a class="ox-command-item" href="${href}">${title}<span>${detail}</span></a>`
+        `<a class="ox-command-item" href="${href}" role="option" aria-selected="false">${title}<span>${detail}</span></a>`
       ).join("")
       : '<div class="ox-command-empty">Nenhuma ação encontrada.</div>';
+    selectCommandItem(0);
+  }
+
+  function selectCommandItem(index) {
+    const items = $$(".ox-command-item");
+    if (!items.length) return;
+    const normalized = (index + items.length) % items.length;
+    items.forEach((item, itemIndex) =>
+      item.setAttribute("aria-selected", String(itemIndex === normalized))
+    );
+    items[normalized].scrollIntoView({ block: "nearest" });
   }
 
   function openCommandMenu() {
@@ -242,10 +262,102 @@
 
   function improveButtons() {
     $$("button").forEach((button) => {
+      if (button.dataset.oxButton) return;
+      button.dataset.oxButton = "1";
       if (!button.getAttribute("type")) button.type = "button";
       if (!button.getAttribute("aria-label") && !button.textContent.trim()) {
         button.setAttribute("aria-label", button.title || "Ação");
       }
+      button.addEventListener("pointerdown", (event) => {
+        if (reduceMotion || button.disabled) return;
+        const bounds = button.getBoundingClientRect();
+        const ripple = document.createElement("span");
+        ripple.className = "ox-ripple";
+        ripple.style.left = `${event.clientX - bounds.left}px`;
+        ripple.style.top = `${event.clientY - bounds.top}px`;
+        ripple.addEventListener("animationend", () => ripple.remove(), { once: true });
+        button.appendChild(ripple);
+      });
+    });
+  }
+
+  function setButtonLoading(button, loading, label = "Processando...") {
+    if (!button) return;
+    if (loading) {
+      if (button.dataset.oxLoading === "1") return;
+      button.dataset.oxLoading = "1";
+      button.dataset.oxLabel = button.innerHTML;
+      button.disabled = true;
+      button.setAttribute("aria-busy", "true");
+      button.innerHTML = `<span class="ox-button-spinner" aria-hidden="true"></span><span>${label}</span>`;
+      return;
+    }
+    if (button.dataset.oxLoading !== "1") return;
+    button.innerHTML = button.dataset.oxLabel || button.textContent;
+    delete button.dataset.oxLabel;
+    delete button.dataset.oxLoading;
+    button.disabled = false;
+    button.removeAttribute("aria-busy");
+  }
+
+  function addAccessibilityFoundation() {
+    const main = $("main") || $("#mainApp") || $(".app");
+    if (main && !main.id) main.id = "oxMainContent";
+    if (!$(".ox-skip-link") && main?.id) {
+      const skip = document.createElement("a");
+      skip.className = "ox-skip-link";
+      skip.href = `#${main.id}`;
+      skip.textContent = "Pular para o conteúdo";
+      document.body.prepend(skip);
+    }
+  }
+
+  function addBreadcrumbs() {
+    if (isHome || $(".ox-breadcrumbs")) return;
+    const main = $("main");
+    if (!main) return;
+    const titles = {
+      "origenix-dashboard-v3.html": "Dashboard",
+      "origenix-sistema-login.html": "Clientes e documentos",
+      "origenix-emissao-v3.html": "Emissão e assinatura",
+      "origenix-pacs.html": "Programas de autocontrole",
+      "recuperar-senha.html": "Recuperar senha"
+    };
+    const current = titles[location.pathname.split("/").pop() || ""];
+    if (!current) return;
+    const breadcrumbs = document.createElement("nav");
+    breadcrumbs.className = "ox-breadcrumbs";
+    breadcrumbs.setAttribute("aria-label", "Navegação estrutural");
+    breadcrumbs.innerHTML = `<a href="origenix-dashboard-v3.html">Início</a><span aria-hidden="true">/</span><span aria-current="page">${current}</span>`;
+    main.prepend(breadcrumbs);
+  }
+
+  function addNetworkStatus() {
+    if ($(".ox-network-status")) return;
+    const status = document.createElement("div");
+    status.className = "ox-network-status";
+    status.setAttribute("role", "status");
+    document.body.appendChild(status);
+    const update = () => {
+      status.textContent = navigator.onLine
+        ? "Conexão restabelecida. Os dados podem ser atualizados."
+        : "Você está offline. Alterações não serão enviadas.";
+      status.classList.add("show");
+      clearTimeout(addNetworkStatus.timer);
+      if (navigator.onLine) {
+        addNetworkStatus.timer = setTimeout(() => status.classList.remove("show"), 3200);
+      }
+    };
+    addEventListener("online", update);
+    addEventListener("offline", update);
+    if (!navigator.onLine) update();
+  }
+
+  function markActiveNavigation() {
+    const current = location.pathname.split("/").pop() || "index.html";
+    $$(`a[href="${current}"]`).forEach((link) => {
+      link.setAttribute("aria-current", "page");
+      link.classList.add("ox-active-route");
     });
   }
 
@@ -364,12 +476,16 @@
   }
 
   function run() {
+    addAccessibilityFoundation();
     addUtilityButtons();
+    addBreadcrumbs();
+    addNetworkStatus();
     enhancePasswordFields();
     enhanceAuth();
     enhanceLeadModal();
     enhanceMobileMenu();
     enhanceDashboard();
+    markActiveNavigation();
     improveButtons();
   }
 
@@ -384,8 +500,31 @@
       window.closeLeadModal?.();
       $(".nav-links")?.classList.remove("ox-open");
     }
+    if ($("#oxCommandOverlay")?.classList.contains("show") && ["ArrowDown", "ArrowUp"].includes(event.key)) {
+      event.preventDefault();
+      const items = $$(".ox-command-item");
+      if (!items.length) return;
+      const current = items.findIndex((item) => item.getAttribute("aria-selected") === "true");
+      selectCommandItem(current + (event.key === "ArrowDown" ? 1 : -1));
+    }
   });
 
   run();
-  new MutationObserver(run).observe(document.body, { childList: true, subtree: true });
+  let scheduled = false;
+  new MutationObserver(() => {
+    if (scheduled) return;
+    scheduled = true;
+    requestAnimationFrame(() => {
+      scheduled = false;
+      improveButtons();
+      enhancePasswordFields();
+    });
+  }).observe(document.body, { childList: true, subtree: true });
+
+  window.OrigenixUI = Object.freeze({
+    showToast,
+    setButtonLoading,
+    openCommandMenu,
+    closeCommandMenu
+  });
 })();
