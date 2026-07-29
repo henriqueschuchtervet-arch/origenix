@@ -114,8 +114,8 @@
 
   const commandItems = [
     ["Dashboard", "Visão geral e indicadores", "origenix-dashboard-v3.html"],
-    ["Novo cadastro", "Cadastrar estabelecimento", "origenix-sistema-login.html"],
-    ["Clientes e documentos", "Gerenciar estabelecimentos", "origenix-sistema-login.html"],
+    ["Novo cadastro", "Cadastrar estabelecimento", "origenix-sistema-login.html?view=new"],
+    ["Clientes e documentos", "Gerenciar estabelecimentos", "origenix-sistema-login.html?view=clients"],
     ["Programas de autocontrole", "PAC, APPCC, PPHO e auditorias", "origenix-pacs.html"],
     ["Emissão e assinatura", "Documentos prontos para assinatura", "origenix-emissao-v3.html"],
     ["Recuperar senha", "Redefinir acesso", "recuperar-senha.html"],
@@ -540,11 +540,11 @@
       actions.className = "ox-dashboard-actions";
       actions.setAttribute("aria-label", "Ações rápidas");
       actions.innerHTML = `
-        <a class="ox-dashboard-action ox-action-primary" href="origenix-sistema-login.html">
+        <a class="ox-dashboard-action ox-action-primary" href="origenix-sistema-login.html?view=new">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
           <div><strong>Novo cadastro</strong><span>Adicionar estabelecimento</span></div>
         </a>
-        <a class="ox-dashboard-action" href="origenix-sistema-login.html">
+        <a class="ox-dashboard-action" href="origenix-sistema-login.html?view=clients">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 21v-2a6 6 0 0 1 6-6h1a6 6 0 0 1 6 6v2M17 8h4M19 6v4"/></svg>
           <div><strong>Clientes</strong><span>Consultar e editar</span></div>
         </a>
@@ -552,7 +552,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 4h16v16H4zM8 9h8M8 13h8M8 17h5"/></svg>
           <div><strong>PACs</strong><span>Autocontrole e APPCC</span></div>
         </a>
-        <a class="ox-dashboard-action" href="origenix-sistema-login.html">
+        <a class="ox-dashboard-action" href="origenix-sistema-login.html?view=documents">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 2h9l5 5v15H6zM14 2v6h6M9 13h8M9 17h8"/></svg>
           <div><strong>Novo documento</strong><span>Emitir e versionar</span></div>
         </a>
@@ -583,11 +583,11 @@
 
     const dashboardRoutes = [
       ["visão geral", "origenix-dashboard-v3.html"],
-      ["clientes", "origenix-sistema-login.html"],
-      ["projetos", "origenix-sistema-login.html"],
-      ["documentos", "origenix-sistema-login.html"],
+      ["clientes", "origenix-sistema-login.html?view=clients"],
+      ["projetos", "origenix-pacs.html"],
+      ["documentos", "origenix-sistema-login.html?view=documents"],
       ["rts & art", "origenix-emissao-v3.html"],
-      ["licenças", "origenix-sistema-login.html"],
+      ["licenças", "origenix-sistema-login.html?view=clients"],
       ["auditorias", "origenix-pacs.html"]
     ];
 
