@@ -237,6 +237,8 @@
     .page{box-shadow:none;margin:0;}
     #docView .page{page-break-after:always;}
   }
+
+.audit-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:16px 0}.audit-metric{display:flex;flex-direction:column;gap:4px;padding:14px 16px;border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,.55)}.audit-metric span{font-size:12px;color:var(--muted)}.audit-metric b{font-size:18px}.audit-integrity{color:#157347}.audit-tools{display:grid;grid-template-columns:minmax(220px,1.5fr) minmax(180px,1fr) minmax(180px,1fr) auto auto auto;gap:10px;align-items:end;margin:12px 0 16px}.audit-tools input,.audit-tools select{width:100%}.audit-date{display:grid;gap:5px;font-size:11px;font-weight:700;color:var(--muted)}.audit-event{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:12px;align-items:start;padding:16px 0;border-bottom:1px solid var(--border)}.audit-event:last-child{border-bottom:0}.audit-event-icon{display:grid;place-items:center;width:38px;height:38px;border-radius:11px;background:#eef6f1;color:#157347;font-weight:800}.audit-event-main{min-width:0}.audit-event-main b{display:block;margin-bottom:4px}.audit-event-main p{margin:0;color:var(--muted);font-size:13px;overflow-wrap:anywhere}.audit-event-meta{text-align:right;color:var(--muted);font-size:12px}.audit-event-meta span{display:block;margin-top:4px}.audit-action{display:inline-flex;padding:3px 8px;border-radius:999px;background:#f0f3f5;color:#334;font-size:11px;font-weight:700;text-transform:lowercase}@media(max-width:1100px){.audit-tools{grid-template-columns:1fr 1fr 1fr}.audit-metrics{grid-template-columns:1fr}}@media(max-width:680px){.audit-tools{grid-template-columns:1fr}.audit-event{grid-template-columns:38px 1fr}.audit-event-meta{grid-column:2;text-align:left}}
 </style>
 </head>
 <body>
@@ -266,19 +268,24 @@
       <div class="name">ORIGENI<span class="x">X</span></div>
     </div>
     <nav class="side-nav">
-      <div class="nav-item active" data-tab="cadastro">
+      <div class="nav-item active" data-tab="cadastro" role="button" tabindex="0">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 5v14M5 12h14"/></svg>
         Novo Cadastro
       </div>
-      <div class="nav-item" data-tab="clientes">
+      <div class="nav-item" data-tab="clientes" role="button" tabindex="0">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="7" r="3"/><path d="M2 21v-1a6 6 0 016-6h2a6 6 0 016 6v1"/></svg>
         Clientes Cadastrados
         <span class="count" id="clientCount">0</span>
       </div>
-      <div class="nav-item" data-tab="documentos">
+      <div class="nav-item" data-tab="documentos" role="button" tabindex="0">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2h9l5 5v15H6zM14 2v6h6M9 13h8M9 17h8"/></svg>
         Documentos
         <span class="count" id="documentCount">0</span>
+      </div>
+      <div class="nav-item" data-tab="auditoria" role="button" tabindex="0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3l8 4v5c0 5-3.4 8.6-8 10-4.6-1.4-8-5-8-10V7l8-4zM8 12l2.5 2.5L16 9"/></svg>
+        Auditoria
+        <span class="count" id="auditCount">0</span>
       </div>
     </nav>
     <div class="side-user">
@@ -370,6 +377,35 @@
           <nav id="documentPagination" class="client-pagination" aria-label="Paginação de documentos"></nav>
         </div>
       </div>
+
+      <div id="tab-auditoria" style="display:none;">
+        <div class="card panel">
+          <div class="card-head"><div><h2>Central de Auditoria</h2><p class="helper-text">Histórico imutável das ações realizadas no sistema.</p></div></div>
+          <div class="audit-metrics" aria-label="Resumo da auditoria">
+            <div class="audit-metric"><span>Eventos encontrados</span><b id="auditMetricTotal">0</b></div>
+            <div class="audit-metric"><span>Período consultado</span><b id="auditMetricPeriod">Todos</b></div>
+            <div class="audit-metric"><span>Integridade</span><b class="audit-integrity">Somente leitura</b></div>
+          </div>
+          <div class="audit-tools" role="search">
+            <input id="auditSearch" type="search" placeholder="Pesquisar ação ou detalhes" aria-label="Pesquisar auditoria" oninput="agendarBuscaAuditoria()">
+            <select id="auditCompanyFilter" aria-label="Filtrar auditoria por empresa" onchange="reiniciarAuditoria()"><option value="todos">Todas as empresas</option></select>
+            <select id="auditActionFilter" aria-label="Filtrar auditoria por ação" onchange="reiniciarAuditoria()">
+              <option value="todos">Todas as ações</option>
+              <option value="ANEXO_EXCLUIDO">Anexo excluído</option>
+              <option value="DOCUMENTO_EMITIDO">Documento emitido</option>
+              <option value="EMPRESA_CRIADA">Empresa criada</option>
+              <option value="EMPRESA_ATUALIZADA">Empresa atualizada</option>
+              <option value="EMPRESA_ARQUIVADA">Empresa arquivada</option>
+            </select>
+            <label class="audit-date">De <input id="auditDateFrom" type="date" onchange="reiniciarAuditoria()"></label>
+            <label class="audit-date">Até <input id="auditDateTo" type="date" onchange="reiniciarAuditoria()"></label>
+            <button class="btn-ghost" type="button" onclick="limparFiltrosAuditoria()">Limpar filtros</button>
+          </div>
+          <div class="document-results-meta"><span id="auditResultsSummary" aria-live="polite">Carregando eventos...</span></div>
+          <div id="auditList" aria-live="polite" aria-busy="false"></div>
+          <nav id="auditPagination" class="client-pagination" aria-label="Paginação da auditoria"></nav>
+        </div>
+      </div>
     </div>
   </main>
 </div>
@@ -436,6 +472,7 @@ function setConnStatus(state, msg){
 let authMode = 'login';
 let currentUser = null;
 let currentRole = 'cliente';
+let currentProfileName = 'Usuário';
 let canCreateDocuments = false;
 let canDeleteCompanies = false;
 let editingClientId = null;
@@ -452,6 +489,12 @@ let documentSearchTimer = null;
 let documentRequestSequence = 0;
 const DOCUMENT_PAGE_SIZE = 20;
 let documentDossierReturnFocus = null;
+let auditPage = 0;
+let auditTotal = 0;
+let auditSearchTimer = null;
+let auditRequestSequence = 0;
+let auditCompaniesLoaded = false;
+const AUDIT_PAGE_SIZE = 25;
 
 function setAuthMode(mode){
   authMode = mode;
@@ -517,6 +560,10 @@ async function aplicarRotaInicial(){
     switchTab('documentos');
     return;
   }
+  if(view === 'audit'){
+    switchTab('auditoria');
+    return;
+  }
   switchTab('clientes');
 }
 
@@ -528,9 +575,10 @@ async function onAuthenticated(user){
   document.getElementById('loginView').style.display = 'none';
   document.getElementById('mainView').style.display = 'grid';
 
-  const { data: perfil, error } = await supa.from('perfis').select('papel').eq('user_id', user.id).maybeSingle();
+  const { data: perfil, error } = await supa.from('perfis').select('papel,nome').eq('user_id', user.id).maybeSingle();
   if(error) console.error('Falha ao carregar perfil', error);
   currentRole = perfil ? perfil.papel : 'cliente';
+  currentProfileName = perfil?.nome || user.email || 'Usuário';
   canCreateDocuments = ['administrador','rt','consultor'].includes(currentRole);
   canDeleteCompanies = currentRole === 'administrador';
 
@@ -858,6 +906,138 @@ async function renderDocumentList(){
   renderDocumentRows(list);
 }
 
+function agendarBuscaAuditoria(){
+  window.clearTimeout(auditSearchTimer);
+  auditSearchTimer = window.setTimeout(reiniciarAuditoria, 320);
+}
+
+function reiniciarAuditoria(){ auditPage = 0; renderAuditList(); }
+
+function mudarPaginaAuditoria(page){
+  const pageCount = Math.max(1, Math.ceil(auditTotal / AUDIT_PAGE_SIZE));
+  if(page < 0 || page >= pageCount || page === auditPage) return;
+  auditPage = page;
+  renderAuditList();
+  document.getElementById('tab-auditoria')?.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function limparFiltrosAuditoria(){
+  document.getElementById('auditSearch').value = '';
+  document.getElementById('auditCompanyFilter').value = 'todos';
+  document.getElementById('auditActionFilter').value = 'todos';
+  document.getElementById('auditDateFrom').value = '';
+  document.getElementById('auditDateTo').value = '';
+  reiniciarAuditoria();
+}
+
+async function carregarEmpresasAuditoria(){
+  if(auditCompaniesLoaded) return;
+  const select = document.getElementById('auditCompanyFilter');
+  const { data, error } = await supa.from('empresas').select('id,nome').order('nome').limit(500);
+  if(error){ console.error('Falha ao carregar empresas da auditoria', error); return; }
+  for(const company of data || []){
+    const option = document.createElement('option');
+    option.value = company.id;
+    option.textContent = company.nome || 'Empresa sem nome';
+    select.appendChild(option);
+  }
+  auditCompaniesLoaded = true;
+}
+
+function nomeAcaoAuditoria(action){
+  const labels = {
+    ANEXO_EXCLUIDO:'Anexo excluído', DOCUMENTO_EMITIDO:'Documento emitido',
+    EMPRESA_CRIADA:'Empresa criada', EMPRESA_ATUALIZADA:'Empresa atualizada',
+    EMPRESA_ARQUIVADA:'Empresa arquivada'
+  };
+  return labels[action] || String(action || 'Ação registrada').toLowerCase().replaceAll('_',' ');
+}
+
+function resumoDetalhesAuditoria(raw){
+  if(!raw) return 'Sem detalhes adicionais.';
+  try{
+    const value = JSON.parse(raw);
+    const parts = [];
+    if(value.nome_arquivo) parts.push(value.nome_arquivo);
+    if(value.documento_id) parts.push('Documento ' + String(value.documento_id).slice(0,8));
+    if(value.anexo_id) parts.push('Anexo ' + String(value.anexo_id).slice(0,8));
+    if(value.codigo) parts.push(String(value.codigo));
+    return parts.length ? parts.join(' · ') : String(raw).slice(0,240);
+  }catch{ return String(raw).slice(0,240); }
+}
+
+function periodoAuditoria(){
+  const from = document.getElementById('auditDateFrom').value;
+  const to = document.getElementById('auditDateTo').value;
+  if(from && to) return new Date(from+'T12:00:00').toLocaleDateString('pt-BR') + '–' + new Date(to+'T12:00:00').toLocaleDateString('pt-BR');
+  if(from) return 'Desde ' + new Date(from+'T12:00:00').toLocaleDateString('pt-BR');
+  if(to) return 'Até ' + new Date(to+'T12:00:00').toLocaleDateString('pt-BR');
+  return 'Todos';
+}
+
+async function getAuditEvents(){
+  const sequence = ++auditRequestSequence;
+  const rawSearch = (document.getElementById('auditSearch')?.value || '').trim();
+  const search = rawSearch.replace(/[%,()_]/g,' ').replace(/\s+/g,' ').trim().slice(0,80);
+  const company = document.getElementById('auditCompanyFilter')?.value || 'todos';
+  const action = document.getElementById('auditActionFilter')?.value || 'todos';
+  const fromDate = document.getElementById('auditDateFrom')?.value;
+  const toDate = document.getElementById('auditDateTo')?.value;
+  const from = auditPage * AUDIT_PAGE_SIZE;
+  const to = from + AUDIT_PAGE_SIZE - 1;
+  let query = supa.from('auditorias')
+    .select('id,empresa_id,usuario_id,acao,detalhes,created_at,empresas(nome)', {count:'exact'})
+    .order('created_at',{ascending:false})
+    .order('id',{ascending:false})
+    .range(from,to);
+  if(search) query = query.or(`acao.ilike.%${search}%,detalhes.ilike.%${search}%`);
+  if(company !== 'todos') query = query.eq('empresa_id', company);
+  if(action !== 'todos') query = query.eq('acao', action);
+  if(fromDate) query = query.gte('created_at', fromDate+'T00:00:00');
+  if(toDate){ const next = new Date(toDate+'T12:00:00'); next.setDate(next.getDate()+1); query = query.lt('created_at', next.toISOString().slice(0,10)+'T00:00:00'); }
+  const {data,error,count} = await query;
+  if(sequence !== auditRequestSequence) return null;
+  if(error){ console.error(error); showToast('Não foi possível carregar a auditoria.', true); return []; }
+  auditTotal = count || 0;
+  return data || [];
+}
+
+function renderAuditRows(events){
+  const list = document.getElementById('auditList');
+  const first = auditTotal ? auditPage * AUDIT_PAGE_SIZE + 1 : 0;
+  const last = Math.min((auditPage+1)*AUDIT_PAGE_SIZE,auditTotal);
+  const pageCount = Math.max(1,Math.ceil(auditTotal/AUDIT_PAGE_SIZE));
+  document.getElementById('auditCount').textContent = auditTotal;
+  document.getElementById('auditMetricTotal').textContent = auditTotal;
+  document.getElementById('auditMetricPeriod').textContent = periodoAuditoria();
+  document.getElementById('auditResultsSummary').textContent = auditTotal ? `Exibindo ${first}–${last} de ${auditTotal} evento${auditTotal===1?'':'s'}` : 'Nenhum evento encontrado';
+  if(!events.length){ list.innerHTML = '<div class="empty-state">Nenhum evento corresponde aos filtros atuais.</div>'; }
+  else list.innerHTML = events.map(event=>{
+    const actor = event.usuario_id === currentUser?.id ? currentProfileName : (event.usuario_id ? 'Usuário '+event.usuario_id.slice(0,8) : 'Sistema');
+    const occurred = event.created_at ? new Date(event.created_at).toLocaleString('pt-BR') : 'Sem data';
+    return `<article class="audit-event">
+      <div class="audit-event-icon" aria-hidden="true">✓</div>
+      <div class="audit-event-main"><b>${escapeHtml(nomeAcaoAuditoria(event.acao))}</b><p>${escapeHtml(resumoDetalhesAuditoria(event.detalhes))}</p></div>
+      <div class="audit-event-meta"><span class="audit-action">${escapeHtml(event.acao||'evento')}</span><span>${escapeHtml(event.empresas?.nome||'Empresa indisponível')}</span><span>${escapeHtml(actor)} · ${occurred}</span></div>
+    </article>`;
+  }).join('');
+  document.getElementById('auditPagination').innerHTML = pageCount>1 ? `
+    <button class="mini-btn" type="button" onclick="mudarPaginaAuditoria(${auditPage-1})" ${auditPage===0?'disabled':''}>← Anterior</button>
+    <span>Página <b>${auditPage+1}</b> de ${pageCount}</span>
+    <button class="mini-btn" type="button" onclick="mudarPaginaAuditoria(${auditPage+1})" ${auditPage>=pageCount-1?'disabled':''}>Próxima →</button>` : '';
+}
+
+async function renderAuditList(){
+  const list = document.getElementById('auditList');
+  await carregarEmpresasAuditoria();
+  list.setAttribute('aria-busy','true');
+  list.innerHTML = '<div class="empty-state">Carregando trilha de auditoria...</div>';
+  const events = await getAuditEvents();
+  list.setAttribute('aria-busy','false');
+  if(events === null) return;
+  renderAuditRows(events);
+}
+
 // ---- CRUD: empresas ----
 const EMPRESA_FIELDS = 'id,nome,cnpj,email,telefone,proprietario,municipio,tipo_estabelecimento,inspecao,capacidade,area,rt_nome,rt_crmv,user_id,criado_em,atualizado_em,ativo,arquivado_em';
 
@@ -983,31 +1163,36 @@ function editarCliente(id){
 }
 
 function switchTab(tab){
-  const validTab = ['cadastro','clientes','documentos'].includes(tab) ? tab : 'clientes';
+  const validTab = ['cadastro','clientes','documentos','auditoria'].includes(tab) ? tab : 'clientes';
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
   const nav = document.querySelector(`.nav-item[data-tab="${validTab}"]`);
   if(nav) nav.classList.add('active');
   document.getElementById('tab-cadastro').style.display = validTab==='cadastro' ? 'block':'none';
   document.getElementById('tab-clientes').style.display = validTab==='clientes' ? 'block':'none';
   document.getElementById('tab-documentos').style.display = validTab==='documentos' ? 'block':'none';
+  document.getElementById('tab-auditoria').style.display = validTab==='auditoria' ? 'block':'none';
   const titles = {
     cadastro: editingClientId ? 'Editar Cadastro' : 'Novo Cadastro',
     clientes: 'Clientes Cadastrados',
-    documentos: 'Biblioteca Documental'
+    documentos: 'Biblioteca Documental',
+    auditoria: 'Central de Auditoria'
   };
   const subtitles = {
     cadastro: editingClientId ? 'Atualize os dados operacionais do estabelecimento' : 'Fase 1 — Triagem do estabelecimento',
     clientes: 'Pesquise, edite, emita ou arquive estabelecimentos',
-    documentos: 'Consulte códigos, versões, status e estabelecimentos'
+    documentos: 'Consulte códigos, versões, status e estabelecimentos',
+    auditoria: 'Rastreabilidade imutável das operações do sistema'
   };
   document.getElementById('pageTitle').textContent = titles[validTab];
   document.getElementById('pageSub').textContent = subtitles[validTab];
   if(validTab==='clientes') renderClientList();
   if(validTab==='documentos') renderDocumentList();
+  if(validTab==='auditoria') renderAuditList();
 }
 
 document.querySelectorAll('.nav-item').forEach(el=>{
   el.addEventListener('click', ()=>switchTab(el.dataset.tab));
+  el.addEventListener('keydown', event=>{ if(event.key==='Enter' || event.key===' '){ event.preventDefault(); switchTab(el.dataset.tab); } });
 });
 
 function agendarBuscaClientes(){
