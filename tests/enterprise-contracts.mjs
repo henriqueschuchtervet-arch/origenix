@@ -482,6 +482,31 @@ contract("diálogo compartilhado preserva valores em edição", () => {
   ]);
 });
 
+contract("dashboard executivo exibe prioridades e somente rotas funcionais", () => {
+  includesAll(files["origenix-dashboard-v3.html"], [
+    "id=\"kpiTarefasVencidas\"",
+    "id=\"kpiDocumentosRevisao\"",
+    "id=\"agendaList\"",
+    "id=\"criticalAlertsList\"",
+    "origenix-sistema-login.html?view=tasks",
+    "origenix-sistema-login.html?view=notifications",
+    "origenix-sistema-login.html?view=audit",
+    "async function loadDashboard",
+    "from('tarefas').select(taskFields",
+    ".eq('status','em_revisao')",
+    "function operationalRow",
+    "formatDashboardDeadline",
+  ]);
+  assert.ok(
+    !files["origenix-dashboard-v3.html"].includes("Faturamento"),
+    "dashboard ainda exibe módulo inerte de faturamento",
+  );
+  includesAll(files["ui-enhancements.js"], [
+    "origenix-sistema-login.html?view=tasks",
+    "origenix-sistema-login.html?view=notifications",
+  ]);
+});
+
 const failures = results.filter((result) => !result.ok);
 for (const result of results) {
   console.log(`${result.ok ? "✓" : "✗"} ${result.name}${result.error ? ` — ${result.error}` : ""}`);
