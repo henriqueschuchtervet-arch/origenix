@@ -1,0 +1,12 @@
+{
+  "name": "origenix",
+  "version": "4.0.0",
+  "private": true,
+  "description": "Plataforma regulatória e sanitária para produtos de origem animal.",
+  "scripts": {
+    "test": "node tests/enterprise-contracts.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
