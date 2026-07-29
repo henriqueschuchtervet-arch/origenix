@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800&family=Inter:wght@400;500;600&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="origenix-supabase.js?v=1.0"></script>
 <style>
   :root{
     --black:#000000; --graphite:#121214; --graphite-2:#1a1a1c;
@@ -217,11 +218,8 @@
 
 <script>
 const LOGO = "assets/origenix-logo-v1.svg";
-const SUPABASE_URL = "https://kdlyjcaxopypqeitazan.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_WPAmKMxTATKGybLe9FBs1Q_X417Hc5X";
-
 let supa = null;
-try { supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); }
+try { supa = window.OrigenixSupabase.createClient(); }
 catch(e){ console.error('Falha ao iniciar Supabase', e); }
 
 let authMode = 'login';
