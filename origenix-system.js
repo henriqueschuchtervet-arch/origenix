@@ -145,8 +145,8 @@ async function onAuthenticated(user){
   const sameUser = currentUser && currentUser.id === user.id;
   currentUser = user;
   document.getElementById('userEmail').textContent = user.email || 'Usuário';
-  document.getElementById('loginView').style.display = 'none';
-  document.getElementById('mainView').style.display = 'grid';
+  document.getElementById('loginView').classList.add('is-hidden');
+  document.getElementById('mainView').classList.remove('is-hidden');
 
   const { data: perfil, error } = await supa.from('perfis').select('papel,nome').eq('user_id', user.id).maybeSingle();
   if(error) console.error('Falha ao carregar perfil', error);
@@ -154,7 +154,7 @@ async function onAuthenticated(user){
   currentProfileName = perfil?.nome || user.email || 'Usuário';
   canCreateDocuments = ['administrador','rt','consultor'].includes(currentRole);
   canDeleteCompanies = currentRole === 'administrador';
-  document.getElementById('newTaskButton').style.display = canCreateDocuments ? '' : 'none';
+  document.getElementById('newTaskButton').classList.toggle('is-hidden', !canCreateDocuments);
 
   if(!sameUser){
     await testConnection();
@@ -169,12 +169,12 @@ async function initAuth(){
     onAuthenticated,
     onSignedOut(){
       currentUser = null;
-      document.getElementById('mainView').style.display = 'none';
-      document.getElementById('loginView').style.display = 'flex';
+      document.getElementById('mainView').classList.add('is-hidden');
+      document.getElementById('loginView').classList.remove('is-hidden');
     },
     onMissingSession(){
-      document.getElementById('loginView').style.display = 'flex';
-      document.getElementById('mainView').style.display = 'none';
+      document.getElementById('loginView').classList.remove('is-hidden');
+      document.getElementById('mainView').classList.add('is-hidden');
     },
     onUnavailable(){ setLoginMsg('Serviço de autenticação indisponível.', 'error'); },
     onError(error){ console.error(error); },
@@ -352,7 +352,7 @@ async function abrirDossieDocumento(id, captureFocus=true){
   document.getElementById('documentDossierTitle').textContent = documento.titulo || documento.tipo || 'Documento';
   body.innerHTML = '<div class="empty-state">Carregando histórico e anexos...</div>';
   overlay.classList.add('show');
-  document.body.style.overflow = 'hidden';
+  document.body.classList.add('ox-scroll-lock');
   if(captureFocus) overlay.querySelector('.client-detail-close').focus();
 
   const [versionsResult, attachmentsResult] = await Promise.all([
@@ -384,9 +384,9 @@ async function abrirDossieDocumento(id, captureFocus=true){
       <div class="client-detail-field"><span>Emissão</span><b>${formatDocumentDate(documento)}</b></div>
     </div>
     <div class="client-detail-actions">
-      <button class="mini-btn" type="button" onclick="copiarCodigoDocumento('${encodeURIComponent(documento.codigo||'')}')">Copiar código</button>
-      ${hash ? `<button class="mini-btn" type="button" onclick="copiarHashDocumento('${encodeURIComponent(hash)}')">Copiar hash</button>` : ''}
-      <button class="mini-btn edit" type="button" onclick="fecharDossieDocumento();abrirEmpresaDoDocumento('${documento.empresa_id}')">Ver empresa</button>
+      <button class="mini-btn" type="button" data-action="copy-document-code" data-value="${encodeURIComponent(documento.codigo||'')}">Copiar código</button>
+      ${hash ? `<button class="mini-btn" type="button" data-action="copy-document-hash" data-value="${encodeURIComponent(hash)}">Copiar hash</button>` : ''}
+      <button class="mini-btn edit" type="button" data-action="dossier-company" data-company-id="${escapeHtml(documento.empresa_id)}">Ver empresa</button>
     </div>
     <section class="client-detail-section">
       <h3>Histórico de versões (${versions.length})</h3>
@@ -395,12 +395,12 @@ async function abrirDossieDocumento(id, captureFocus=true){
           <div class="dossier-version-head"><b>Versão ${version.numero_versao}</b><small class="document-status ${normalizarStatusDocumento(version.status)}">${escapeHtml(normalizarStatusDocumento(version.status).replace('_',' '))}</small></div>
           <p>${new Date(version.criado_em).toLocaleString('pt-BR')} · Código ${escapeHtml(version.codigo)}</p>
           ${version.hash_sha256 ? `<p>SHA-256: ${escapeHtml(version.hash_sha256)}</p>` : ''}
-        </article>`).join('')}</div>` : '<div class="empty-state" style="padding:24px 0">Nenhuma versão registrada.</div>'}
+        </article>`).join('')}</div>` : '<div class="empty-state empty-padded">Nenhuma versão registrada.</div>'}
     </section>
     <section class="client-detail-section">
-      <div class="dossier-version-head"><h3>Anexos (${attachments.length})</h3>${canCreateDocuments ? `<div><input id="documentAttachmentInput" type="file" hidden accept=".pdf,.jpg,.jpeg,.png,.webp,.txt,.csv,.doc,.docx,.xls,.xlsx"><button id="documentAttachmentButton" class="mini-btn emit" type="button" onclick="document.getElementById('documentAttachmentInput').click()">＋ Enviar anexo</button></div>` : ''}</div>
+      <div class="dossier-version-head"><h3>Anexos (${attachments.length})</h3>${canCreateDocuments ? `<div><input id="documentAttachmentInput" type="file" hidden accept=".pdf,.jpg,.jpeg,.png,.webp,.txt,.csv,.doc,.docx,.xls,.xlsx"><button id="documentAttachmentButton" class="mini-btn emit" type="button" data-action="upload-attachment">＋ Enviar anexo</button></div>` : ''}</div>
       ${canCreateDocuments ? '<p class="helper-text">PDF, imagem, texto, Word ou Excel · máximo de 10 MB · acesso privado.</p>' : ''}
-      ${attachments.length ? attachments.map(attachment=>`<div class="dossier-attachment"><div>${attachment.signed_url ? `<a href="${escapeHtml(attachment.signed_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(attachment.nome_arquivo||'Abrir anexo')}</a>` : `<b>${escapeHtml(attachment.nome_arquivo||'Anexo indisponível')}</b>`}<span>${attachment.created_at ? new Date(attachment.created_at).toLocaleDateString('pt-BR') : 'Sem data'}</span></div>${canCreateDocuments ? `<button class="mini-btn danger" type="button" onclick="excluirAnexoDocumento('${id}','${attachment.id}','${encodeURIComponent(attachment.url||'')}','${encodeURIComponent(attachment.nome_arquivo||'Anexo')}',this)">Excluir</button>` : ''}</div>`).join('') : '<div class="empty-state" style="padding:24px 0">Nenhum anexo relacionado.</div>'}
+      ${attachments.length ? attachments.map(attachment=>`<div class="dossier-attachment"><div>${attachment.signed_url ? `<a href="${escapeHtml(attachment.signed_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(attachment.nome_arquivo||'Abrir anexo')}</a>` : `<b>${escapeHtml(attachment.nome_arquivo||'Anexo indisponível')}</b>`}<span>${attachment.created_at ? new Date(attachment.created_at).toLocaleDateString('pt-BR') : 'Sem data'}</span></div>${canCreateDocuments ? `<button class="mini-btn danger" type="button" data-action="delete-attachment" data-document-id="${escapeHtml(id)}" data-attachment-id="${escapeHtml(attachment.id)}" data-path="${encodeURIComponent(attachment.url||'')}" data-name="${encodeURIComponent(attachment.nome_arquivo||'Anexo')}">Excluir</button>` : ''}</div>`).join('') : '<div class="empty-state empty-padded">Nenhum anexo relacionado.</div>'}
     </section>`;
   const input = document.getElementById('documentAttachmentInput');
   if(input) input.addEventListener('change', ()=>{
@@ -419,7 +419,7 @@ async function copiarHashDocumento(encodedHash){
 
 function fecharDossieDocumento(){
   document.getElementById('documentDossierOverlay').classList.remove('show');
-  document.body.style.overflow = '';
+  document.body.classList.remove('ox-scroll-lock');
   if(documentDossierReturnFocus instanceof HTMLElement) documentDossierReturnFocus.focus();
   documentDossierReturnFocus = null;
 }
@@ -455,17 +455,17 @@ function renderDocumentRows(list){
         </div>
         <div class="document-row-meta">
           <small class="document-status ${status}">${escapeHtml(status.replace('_',' '))}</small>
-          <button class="mini-btn emit" type="button" onclick="abrirDossieDocumento('${doc.id}')">Abrir dossiê</button>
-          <button class="mini-btn" type="button" onclick="copiarCodigoDocumento('${encodeURIComponent(doc.codigo||'')}')">Copiar código</button>
-          <button class="mini-btn edit" type="button" onclick="abrirEmpresaDoDocumento('${doc.empresa_id}')">Ver empresa</button>
+          <button class="mini-btn emit" type="button" data-action="open-dossier" data-document-id="${escapeHtml(doc.id)}">Abrir dossiê</button>
+          <button class="mini-btn" type="button" data-action="copy-document-code" data-value="${encodeURIComponent(doc.codigo||'')}">Copiar código</button>
+          <button class="mini-btn edit" type="button" data-action="open-document-company" data-company-id="${escapeHtml(doc.empresa_id)}">Ver empresa</button>
         </div>
       </article>`;
     }).join('');
   }
   pagination.innerHTML = pageCount > 1 ? `
-    <button class="mini-btn" type="button" onclick="mudarPaginaDocumentos(${documentPage-1})" ${documentPage===0?'disabled':''}>← Anterior</button>
+    <button class="mini-btn" type="button" data-action="documents-page" data-page="${documentPage-1}" ${documentPage===0?'disabled':''}>← Anterior</button>
     <span>Página <b>${documentPage+1}</b> de ${pageCount}</span>
-    <button class="mini-btn" type="button" onclick="mudarPaginaDocumentos(${documentPage+1})" ${documentPage>=pageCount-1?'disabled':''}>Próxima →</button>` : '';
+    <button class="mini-btn" type="button" data-action="documents-page" data-page="${documentPage+1}" ${documentPage>=pageCount-1?'disabled':''}>Próxima →</button>` : '';
 }
 
 async function renderDocumentList(){
@@ -489,8 +489,8 @@ function alterarVisualizacaoTarefas(view){
   taskView=view==='agenda'?'agenda':'lista';
   document.getElementById('taskListViewButton').classList.toggle('active',taskView==='lista');
   document.getElementById('taskAgendaViewButton').classList.toggle('active',taskView==='agenda');
-  document.getElementById('taskAgendaNav').style.display=taskView==='agenda'?'flex':'none';
-  document.getElementById('taskPagination').style.display=taskView==='lista'?'flex':'none';
+  document.getElementById('taskAgendaNav').classList.toggle('is-hidden', taskView!=='agenda');
+  document.getElementById('taskPagination').classList.toggle('is-hidden', taskView!=='lista');
   taskPage=0;
   renderTasks();
 }
@@ -564,7 +564,7 @@ function valorDataLocal(value){ if(!value) return ''; const date=new Date(value)
 
 function markupTarefa(task){
   const canEdit=canCreateDocuments;
-  return `<article class="task-row"><span class="task-priority ${escapeHtml(task.prioridade)}" aria-label="Prioridade ${escapeHtml(labelPrioridadeTarefa(task.prioridade))}"></span><div class="task-main"><b>${escapeHtml(task.titulo||'Tarefa sem título')}</b><p>${escapeHtml(task.descricao||'Sem descrição')}</p><small>${escapeHtml(task.empresas?.nome||'Empresa indisponível')} · ${escapeHtml(formatarPrazoTarefa(task.prazo))} · ${escapeHtml(labelPrioridadeTarefa(task.prioridade))}</small></div><div class="task-actions"><span class="task-status ${escapeHtml(task.status)}">${escapeHtml(labelStatusTarefa(task.status))}</span>${canEdit?`<button class="mini-btn edit" type="button" onclick="abrirFormularioTarefa('${task.id}')">Editar</button>${task.status!=='concluida'?`<button class="mini-btn emit" type="button" onclick="concluirTarefa('${task.id}',this)">Concluir</button>`:''}`:''}${canDeleteCompanies?`<button class="mini-btn danger" type="button" onclick="excluirTarefa('${task.id}',this)">Excluir</button>`:''}</div></article>`;
+  return `<article class="task-row"><span class="task-priority ${escapeHtml(task.prioridade)}" aria-label="Prioridade ${escapeHtml(labelPrioridadeTarefa(task.prioridade))}"></span><div class="task-main"><b>${escapeHtml(task.titulo||'Tarefa sem título')}</b><p>${escapeHtml(task.descricao||'Sem descrição')}</p><small>${escapeHtml(task.empresas?.nome||'Empresa indisponível')} · ${escapeHtml(formatarPrazoTarefa(task.prazo))} · ${escapeHtml(labelPrioridadeTarefa(task.prioridade))}</small></div><div class="task-actions"><span class="task-status ${escapeHtml(task.status)}">${escapeHtml(labelStatusTarefa(task.status))}</span>${canEdit?`<button class="mini-btn edit" type="button" data-action="edit-task" data-task-id="${escapeHtml(task.id)}">Editar</button>${task.status!=='concluida'?`<button class="mini-btn emit" type="button" data-action="complete-task" data-task-id="${escapeHtml(task.id)}">Concluir</button>`:''}`:''}${canDeleteCompanies?`<button class="mini-btn danger" type="button" data-action="delete-task" data-task-id="${escapeHtml(task.id)}">Excluir</button>`:''}</div></article>`;
 }
 
 function renderTaskRows(tasks){
@@ -581,7 +581,7 @@ function renderTaskRows(tasks){
   const first=taskTotal?taskPage*TASK_PAGE_SIZE+1:0; const last=Math.min((taskPage+1)*TASK_PAGE_SIZE,taskTotal); const pages=Math.max(1,Math.ceil(taskTotal/TASK_PAGE_SIZE));
   document.getElementById('taskResultsSummary').textContent=taskTotal?`Exibindo ${first}–${last} de ${taskTotal} tarefa${taskTotal===1?'':'s'}`:'Nenhuma tarefa encontrada';
   list.innerHTML=tasks.length?tasks.map(markupTarefa).join(''):'<div class="empty-state">Nenhuma tarefa corresponde aos filtros atuais.</div>';
-  document.getElementById('taskPagination').innerHTML=pages>1?`<button class="mini-btn" type="button" onclick="mudarPaginaTarefas(${taskPage-1})" ${taskPage===0?'disabled':''}>← Anterior</button><span>Página <b>${taskPage+1}</b> de ${pages}</span><button class="mini-btn" type="button" onclick="mudarPaginaTarefas(${taskPage+1})" ${taskPage>=pages-1?'disabled':''}>Próxima →</button>`:'';
+  document.getElementById('taskPagination').innerHTML=pages>1?`<button class="mini-btn" type="button" data-action="tasks-page" data-page="${taskPage-1}" ${taskPage===0?'disabled':''}>← Anterior</button><span>Página <b>${taskPage+1}</b> de ${pages}</span><button class="mini-btn" type="button" data-action="tasks-page" data-page="${taskPage+1}" ${taskPage>=pages-1?'disabled':''}>Próxima →</button>`:'';
 }
 
 async function renderTasks(){
@@ -730,8 +730,8 @@ function renderNotificationRows(){
     <span class="notification-severity ${item.severity}" aria-label="Prioridade ${item.severity}"></span>
     <div class="notification-main"><b>${escapeHtml(item.titulo)}</b><p>${escapeHtml(item.descricao)}</p><small>${escapeHtml(item.empresa)} · ${escapeHtml(item.meta)}</small></div>
     <div class="notification-actions">
-      ${!item.lida?`<button class="mini-btn" type="button" onclick="marcarNotificacaoLida('${item.tipo}','${item.id}',this)">Marcar como lida</button>`:''}
-      <button class="mini-btn edit" type="button" onclick="${item.tipo==='documento'?`abrirDocumentoNotificacao('${item.id}')`:`abrirEmpresaDoDocumento('${item.empresa_id}')`}">${item.tipo==='documento'?'Abrir documento':'Ver empresa'}</button>
+      ${!item.lida?`<button class="mini-btn" type="button" data-action="read-notification" data-notification-type="${escapeHtml(item.tipo)}" data-notification-id="${escapeHtml(item.id)}">Marcar como lida</button>`:''}
+      <button class="mini-btn edit" type="button" data-action="${item.tipo==='documento'?'open-notification-document':'open-notification-company'}" data-item-id="${escapeHtml(item.id)}" data-company-id="${escapeHtml(item.empresa_id)}">${item.tipo==='documento'?'Abrir documento':'Ver empresa'}</button>
     </div>
   </article>`).join('');
 }
@@ -960,9 +960,9 @@ function renderAuditRows(events){
     </article>`;
   }).join('');
   document.getElementById('auditPagination').innerHTML = pageCount>1 ? `
-    <button class="mini-btn" type="button" onclick="mudarPaginaAuditoria(${auditPage-1})" ${auditPage===0?'disabled':''}>← Anterior</button>
+    <button class="mini-btn" type="button" data-action="audit-page" data-page="${auditPage-1}" ${auditPage===0?'disabled':''}>← Anterior</button>
     <span>Página <b>${auditPage+1}</b> de ${pageCount}</span>
-    <button class="mini-btn" type="button" onclick="mudarPaginaAuditoria(${auditPage+1})" ${auditPage>=pageCount-1?'disabled':''}>Próxima →</button>` : '';
+    <button class="mini-btn" type="button" data-action="audit-page" data-page="${auditPage+1}" ${auditPage>=pageCount-1?'disabled':''}>Próxima →</button>` : '';
 }
 
 async function renderAuditList(){
@@ -1070,8 +1070,8 @@ function cancelarEdicao(showMessage=true){
   limparForm();
   document.getElementById('formTitle').textContent = 'Dados do Estabelecimento';
   document.getElementById('btnSalvar').textContent = 'Salvar Cadastro';
-  document.getElementById('btnCancelarEdicao').style.display = 'none';
-  document.getElementById('btnLimpar').style.display = '';
+  document.getElementById('btnCancelarEdicao').classList.add('is-hidden');
+  document.getElementById('btnLimpar').classList.remove('is-hidden');
   if(showMessage) showToast('Edição cancelada.');
 }
 
@@ -1094,8 +1094,8 @@ function editarCliente(id){
   Object.entries(values).forEach(([field,value])=>document.getElementById(field).value=value||'');
   document.getElementById('formTitle').textContent = 'Editar Estabelecimento';
   document.getElementById('btnSalvar').textContent = 'Atualizar Cadastro';
-  document.getElementById('btnCancelarEdicao').style.display = '';
-  document.getElementById('btnLimpar').style.display = 'none';
+  document.getElementById('btnCancelarEdicao').classList.remove('is-hidden');
+  document.getElementById('btnLimpar').classList.add('is-hidden');
   switchTab('cadastro');
   document.getElementById('f_nome').focus();
 }
@@ -1105,12 +1105,12 @@ function switchTab(tab){
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
   const nav = document.querySelector(`.nav-item[data-tab="${validTab}"]`);
   if(nav) nav.classList.add('active');
-  document.getElementById('tab-cadastro').style.display = validTab==='cadastro' ? 'block':'none';
-  document.getElementById('tab-clientes').style.display = validTab==='clientes' ? 'block':'none';
-  document.getElementById('tab-documentos').style.display = validTab==='documentos' ? 'block':'none';
-  document.getElementById('tab-auditoria').style.display = validTab==='auditoria' ? 'block':'none';
-  document.getElementById('tab-notificacoes').style.display = validTab==='notificacoes' ? 'block':'none';
-  document.getElementById('tab-tarefas').style.display = validTab==='tarefas' ? 'block':'none';
+  document.getElementById('tab-cadastro').classList.toggle('is-hidden', validTab!=='cadastro');
+  document.getElementById('tab-clientes').classList.toggle('is-hidden', validTab!=='clientes');
+  document.getElementById('tab-documentos').classList.toggle('is-hidden', validTab!=='documentos');
+  document.getElementById('tab-auditoria').classList.toggle('is-hidden', validTab!=='auditoria');
+  document.getElementById('tab-notificacoes').classList.toggle('is-hidden', validTab!=='notificacoes');
+  document.getElementById('tab-tarefas').classList.toggle('is-hidden', validTab!=='tarefas');
   const titles = {
     cadastro: editingClientId ? 'Editar Cadastro' : 'Novo Cadastro',
     clientes: 'Clientes Cadastrados',
@@ -1183,21 +1183,21 @@ function renderClientRows(list){
           <small class="status-badge">${c.ativo ? 'Ativo' : 'Arquivado'}</small>
         </div>
         <div class="actions">
-          <button class="mini-btn" onclick="abrirDetalhesCliente('${c.id}')">Ver detalhes</button>
-          ${c.ativo ? `<button class="mini-btn edit" onclick="editarCliente('${c.id}')">Editar</button>` : ''}
-          ${c.ativo && canCreateDocuments ? `<button class="mini-btn emit" onclick="gerarDocumento('${c.id}')">Gerar documento</button>` : ''}
+          <button class="mini-btn" data-action="client-details" data-client-id="${escapeHtml(c.id)}">Ver detalhes</button>
+          ${c.ativo ? `<button class="mini-btn edit" data-action="edit-client" data-client-id="${escapeHtml(c.id)}">Editar</button>` : ''}
+          ${c.ativo && canCreateDocuments ? `<button class="mini-btn emit" data-action="generate-document" data-client-id="${escapeHtml(c.id)}">Gerar documento</button>` : ''}
           ${canDeleteCompanies ? (c.ativo
-            ? `<button class="mini-btn danger" onclick="alterarSituacaoCliente('${c.id}', false)">Arquivar</button>`
-            : `<button class="mini-btn" onclick="alterarSituacaoCliente('${c.id}', true)">Restaurar</button>`) : ''}
+            ? `<button class="mini-btn danger" data-action="archive-client" data-client-id="${escapeHtml(c.id)}">Arquivar</button>`
+            : `<button class="mini-btn" data-action="restore-client" data-client-id="${escapeHtml(c.id)}">Restaurar</button>`) : ''}
         </div>
       </div>
     `).join('');
   }
 
   pagination.innerHTML = pageCount > 1 ? `
-    <button class="mini-btn" type="button" onclick="mudarPaginaClientes(${clientPage-1})" ${clientPage===0 ? 'disabled' : ''} aria-label="Página anterior">← Anterior</button>
+    <button class="mini-btn" type="button" data-action="clients-page" data-page="${clientPage-1}" ${clientPage===0 ? 'disabled' : ''} aria-label="Página anterior">← Anterior</button>
     <span>Página <b>${clientPage+1}</b> de ${pageCount}</span>
-    <button class="mini-btn" type="button" onclick="mudarPaginaClientes(${clientPage+1})" ${clientPage>=pageCount-1 ? 'disabled' : ''} aria-label="Próxima página">Próxima →</button>
+    <button class="mini-btn" type="button" data-action="clients-page" data-page="${clientPage+1}" ${clientPage>=pageCount-1 ? 'disabled' : ''} aria-label="Próxima página">Próxima →</button>
   ` : '';
 }
 
@@ -1223,7 +1223,7 @@ async function abrirDetalhesCliente(id){
   title.textContent = cliente.nome;
   body.innerHTML = '<div class="empty-state">Carregando visão consolidada...</div>';
   overlay.classList.add('show');
-  document.body.style.overflow = 'hidden';
+  document.body.classList.add('ox-scroll-lock');
   overlay.querySelector('.client-detail-close').focus();
 
   const countQuery = table => supa.from(table).select('id', { count:'exact', head:true }).eq('empresa_id', id);
@@ -1259,19 +1259,19 @@ async function abrirDetalhesCliente(id){
     </div>
     <section class="client-detail-section">
       <h3>Documentos recentes</h3>
-      ${docs.length ? docs.map(doc=>`<div class="client-detail-doc"><div><b>${escapeHtml(doc.titulo||doc.tipo||'Documento')}</b><span>${escapeHtml(doc.codigo||'Sem código')} · ${escapeHtml(doc.versao||'v1.0')}</span></div><span>${escapeHtml(doc.status||'gerado')}</span></div>`).join('') : '<div class="empty-state" style="padding:24px 0">Nenhum documento emitido.</div>'}
+      ${docs.length ? docs.map(doc=>`<div class="client-detail-doc"><div><b>${escapeHtml(doc.titulo||doc.tipo||'Documento')}</b><span>${escapeHtml(doc.codigo||'Sem código')} · ${escapeHtml(doc.versao||'v1.0')}</span></div><span>${escapeHtml(doc.status||'gerado')}</span></div>`).join('') : '<div class="empty-state empty-padded">Nenhum documento emitido.</div>'}
     </section>
     <div class="client-detail-actions">
-      ${cliente.ativo ? `<button class="mini-btn edit" onclick="fecharDetalhesCliente();editarCliente('${cliente.id}')">Editar cadastro</button>` : ''}
-      ${cliente.ativo && canCreateDocuments ? `<button class="mini-btn emit" onclick="fecharDetalhesCliente();gerarDocumento('${cliente.id}')">Gerar documento</button>` : ''}
-      <button class="mini-btn" onclick="location.href='origenix-pacs.html?empresa=${encodeURIComponent(cliente.id)}'">Abrir PACs</button>
+      ${cliente.ativo ? `<button class="mini-btn edit" data-action="details-edit-client" data-client-id="${escapeHtml(cliente.id)}">Editar cadastro</button>` : ''}
+      ${cliente.ativo && canCreateDocuments ? `<button class="mini-btn emit" data-action="details-generate-document" data-client-id="${escapeHtml(cliente.id)}">Gerar documento</button>` : ''}
+      <button class="mini-btn" data-action="open-client-pacs" data-client-id="${escapeHtml(cliente.id)}">Abrir PACs</button>
     </div>`;
 }
 
 function fecharDetalhesCliente(){
   const overlay = document.getElementById('clientDetailOverlay');
   overlay.classList.remove('show');
-  document.body.style.overflow = '';
+  document.body.classList.remove('ox-scroll-lock');
   if(clientDetailReturnFocus instanceof HTMLElement) clientDetailReturnFocus.focus();
   clientDetailReturnFocus = null;
 }
@@ -1484,15 +1484,97 @@ async function gerarDocumento(clientId){
   `;
 
   document.getElementById('docContent').innerHTML = doc;
-  document.getElementById('mainView').style.display = 'none';
-  document.getElementById('docView').style.display = 'block';
+  document.getElementById('mainView').classList.add('is-hidden');
+  document.getElementById('docView').classList.add('document-visible');
   window.scrollTo(0,0);
 }
 
 function fecharDocumento(){
-  document.getElementById('docView').style.display = 'none';
-  document.getElementById('mainView').style.display = 'grid';
+  document.getElementById('docView').classList.remove('document-visible');
+  document.getElementById('mainView').classList.remove('is-hidden');
 }
+
+
+function handleSystemAction(event){
+  const target=event.target.closest('[data-action]');
+  if(!target||target.disabled)return;
+  const action=target.dataset.action;
+  switch(action){
+    case 'auth-login': setAuthMode('login'); break;
+    case 'auth-signup': setAuthMode('signup'); break;
+    case 'auth-submit': handleAuth(); break;
+    case 'logout': handleLogout(); break;
+    case 'open-notifications': switchTab('notificacoes'); break;
+    case 'save-client': salvarCliente(); break;
+    case 'cancel-edit': cancelarEdicao(); break;
+    case 'clear-form': limparForm(); break;
+    case 'new-client': novoCadastro(); break;
+    case 'open-emission': location.assign('origenix-emissao-v3.html'); break;
+    case 'export-audit': exportarAuditoriaCSV(target); break;
+    case 'clear-audit-filters': limparFiltrosAuditoria(); break;
+    case 'refresh-notifications': renderNotifications(); break;
+    case 'new-task': abrirFormularioTarefa(); break;
+    case 'task-list-view': alterarVisualizacaoTarefas('lista'); break;
+    case 'task-agenda-view': alterarVisualizacaoTarefas('agenda'); break;
+    case 'agenda-prev-month': mudarMesAgenda(-1); break;
+    case 'agenda-next-month': mudarMesAgenda(1); break;
+    case 'close-document': fecharDocumento(); break;
+    case 'print-document': window.print(); break;
+    case 'close-client-overlay': if(event.target===target)fecharDetalhesCliente(); break;
+    case 'close-client-details': fecharDetalhesCliente(); break;
+    case 'close-dossier-overlay': if(event.target===target)fecharDossieDocumento(); break;
+    case 'close-dossier': fecharDossieDocumento(); break;
+    case 'copy-document-code': copiarCodigoDocumento(target.dataset.value); break;
+    case 'copy-document-hash': copiarHashDocumento(target.dataset.value); break;
+    case 'dossier-company': fecharDossieDocumento(); abrirEmpresaDoDocumento(target.dataset.companyId); break;
+    case 'upload-attachment': document.getElementById('documentAttachmentInput')?.click(); break;
+    case 'delete-attachment': excluirAnexoDocumento(target.dataset.documentId,target.dataset.attachmentId,target.dataset.path,target.dataset.name,target); break;
+    case 'open-dossier': abrirDossieDocumento(target.dataset.documentId); break;
+    case 'open-document-company': abrirEmpresaDoDocumento(target.dataset.companyId); break;
+    case 'documents-page': mudarPaginaDocumentos(Number(target.dataset.page)); break;
+    case 'edit-task': abrirFormularioTarefa(target.dataset.taskId); break;
+    case 'complete-task': concluirTarefa(target.dataset.taskId,target); break;
+    case 'delete-task': excluirTarefa(target.dataset.taskId,target); break;
+    case 'tasks-page': mudarPaginaTarefas(Number(target.dataset.page)); break;
+    case 'read-notification': marcarNotificacaoLida(target.dataset.notificationType,target.dataset.notificationId,target); break;
+    case 'open-notification-document': abrirDocumentoNotificacao(target.dataset.itemId); break;
+    case 'open-notification-company': abrirEmpresaDoDocumento(target.dataset.companyId); break;
+    case 'audit-page': mudarPaginaAuditoria(Number(target.dataset.page)); break;
+    case 'client-details': abrirDetalhesCliente(target.dataset.clientId); break;
+    case 'edit-client': editarCliente(target.dataset.clientId); break;
+    case 'generate-document': gerarDocumento(target.dataset.clientId); break;
+    case 'archive-client': alterarSituacaoCliente(target.dataset.clientId,false); break;
+    case 'restore-client': alterarSituacaoCliente(target.dataset.clientId,true); break;
+    case 'clients-page': mudarPaginaClientes(Number(target.dataset.page)); break;
+    case 'details-edit-client': fecharDetalhesCliente(); editarCliente(target.dataset.clientId); break;
+    case 'details-generate-document': fecharDetalhesCliente(); gerarDocumento(target.dataset.clientId); break;
+    case 'open-client-pacs': location.assign('origenix-pacs.html?empresa='+encodeURIComponent(target.dataset.clientId)); break;
+  }
+}
+
+function handleSystemInput(event){
+  switch(event.target.dataset.inputAction){
+    case 'search-clients': agendarBuscaClientes(); break;
+    case 'search-documents': agendarBuscaDocumentos(); break;
+    case 'search-audit': agendarBuscaAuditoria(); break;
+    case 'search-notifications': agendarBuscaNotificacoes(); break;
+    case 'search-tasks': agendarBuscaTarefas(); break;
+  }
+}
+
+function handleSystemChange(event){
+  switch(event.target.dataset.changeAction){
+    case 'filter-clients': reiniciarListaClientes(); break;
+    case 'filter-documents': reiniciarListaDocumentos(); break;
+    case 'filter-audit': reiniciarAuditoria(); break;
+    case 'filter-notifications': renderNotificationRows(); break;
+    case 'filter-tasks': reiniciarTarefas(); break;
+  }
+}
+
+document.addEventListener('click',handleSystemAction);
+document.addEventListener('input',handleSystemInput);
+document.addEventListener('change',handleSystemChange);
 
 // init
 initAuth();
