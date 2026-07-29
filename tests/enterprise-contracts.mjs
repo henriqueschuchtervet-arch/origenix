@@ -72,21 +72,30 @@ contract("JavaScript compartilhado possui sintaxe válida", () => {
 
 contract("central operacional usa módulos externos cacheáveis", () => {
   const html = files["origenix-sistema-login.html"];
+  const script = files["origenix-system.js"];
   includesAll(html, [
-    "origenix-system.css?v=1.0",
-    "origenix-system.js?v=1.0",
+    "origenix-system.css?v=1.1",
+    "origenix-system.js?v=1.1",
     "origenix-v4.css?v=4.5",
     "ui-enhancements.js?v=4.5",
+    "data-action=", "data-input-action=", "data-change-action=",
   ]);
-  assert.ok(!/<style\b|<script(?![^>]*\bsrc=)/i.test(html), "central operacional ainda possui blocos inline");
-  includesAll(files["origenix-system.js"], [
+  assert.ok(!/<style\b|<script(?![^>]*\bsrc=)|\sstyle=|\son\w+=/i.test(html), "central operacional ainda possui código inline");
+  includesAll(script, [
     "initAuth()", "salvarCliente", "getDocuments",
     "renderNotifications", "renderTaskRows", "getAuditEvents",
     "abrirDossieDocumento", "Promise.all",
+    "handleSystemAction", "handleSystemInput", "handleSystemChange",
+    "delete-attachment", "complete-task", "read-notification",
   ]);
+  assert.ok(!/\.style\.|\sstyle=|\son(?:click|change|input)=/.test(script), "módulo operacional ainda cria código inline");
   includesAll(files["origenix-system.css"], [
     ":focus-visible", "@media", "prefers-reduced-motion",
+    ".is-hidden", ".document-visible", ".empty-padded",
   ]);
+  const systemHeaders = files["_headers"].split("/origenix-sistema-login.html")[1]?.split("\n\n")[0] || "";
+  includesAll(systemHeaders, ["script-src-attr 'none'", "style-src-attr 'none'", "frame-src 'none'"]);
+  assert.ok(!systemHeaders.includes("'unsafe-inline'"), "CSP da central permite conteúdo inline");
 });
 
 contract("JavaScript inline possui sintaxe válida", () => {
@@ -266,6 +275,7 @@ contract("botões e links internos possuem comportamento real", () => {
       const id = attributes.match(/\bid=["']([^"']+)/i)?.[1];
       const ariaLabel = attributes.match(/\baria-label=["']([^"']+)/i)?.[1];
       const hasInlineAction = /\bonclick\s*=/i.test(attributes);
+      const hasDelegatedAction = /\bdata-action=["']/i.test(attributes);
       const submitsForm = /\btype=["']submit/i.test(attributes);
       const referencedById = id && (
         html.includes(`getElementById('${id}')`)
@@ -279,7 +289,7 @@ contract("botões e links internos possuem comportamento real", () => {
         && sharedUi.includes(`button[aria-label="${ariaLabel}"]`);
 
       assert.ok(
-        hasInlineAction || submitsForm || referencedById || enhancedBySharedUi,
+        hasInlineAction || hasDelegatedAction || submitsForm || referencedById || enhancedBySharedUi,
         `${path}: botão ${index + 1} não possui ação detectável`,
       );
     }
