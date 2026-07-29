@@ -1,0 +1,146 @@
+:root {
+  color-scheme: dark;
+  --red: #d10000;
+  --accent: #ff1a1a;
+  --metal: #aaa;
+  --surface: #121214;
+  --line: rgba(255, 45, 45, 0.25);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: #000;
+  color: #fff;
+  font: 14px Inter, system-ui, sans-serif;
+}
+
+main {
+  width: min(420px, 100%);
+  padding: 30px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: linear-gradient(180deg, #171719, var(--surface));
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6);
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-size: 22px;
+}
+
+p {
+  color: var(--metal);
+  line-height: 1.55;
+}
+
+label {
+  display: block;
+  margin: 20px 0 7px;
+  color: var(--metal);
+  font-size: 12px;
+}
+
+input {
+  width: 100%;
+  padding: 12px 13px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #080808;
+  color: #fff;
+  font: inherit;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+input:hover {
+  border-color: rgba(255, 45, 45, 0.45);
+}
+
+input:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+button,
+.login-link {
+  width: 100%;
+  margin-top: 16px;
+  padding: 13px;
+  border: 0;
+  border-radius: 9px;
+  font: inherit;
+  font-weight: 700;
+  text-align: center;
+  transition: transform 160ms ease, filter 160ms ease, opacity 160ms ease;
+}
+
+button {
+  background: linear-gradient(135deg, #8b0000, var(--accent));
+  color: #fff;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled),
+.login-link:hover {
+  filter: brightness(1.12);
+  transform: translateY(-1px);
+}
+
+button:active:not(:disabled),
+.login-link:active {
+  transform: translateY(0);
+}
+
+button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.login-link {
+  display: block;
+  border: 1px solid var(--line);
+  color: #fff;
+  text-decoration: none;
+}
+
+#message {
+  min-height: 20px;
+  margin-top: 14px;
+  font-size: 13px;
+}
+
+.error {
+  color: #ff7070;
+}
+
+.success {
+  color: #66d391;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+@media (max-width: 480px) {
+  main {
+    padding: 24px 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
