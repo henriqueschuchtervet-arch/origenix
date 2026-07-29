@@ -105,6 +105,9 @@
   .client-tools{display:grid;grid-template-columns:minmax(220px,1fr) 190px auto;gap:10px;padding:16px 24px;border-bottom:1px solid var(--line);}
   .client-tools input,.client-tools select{width:100%;background:#09090a;color:var(--white);border:1px solid var(--line);border-radius:9px;padding:11px 13px;}
   .client-tools .btn-ghost{padding:10px 16px;white-space:nowrap;}
+  .client-results-meta{display:flex;justify-content:space-between;align-items:center;padding:12px 24px;color:var(--metal);font-family:'Montserrat';font-size:11.5px;border-bottom:1px solid rgba(255,255,255,.05);}
+  .client-pagination{display:flex;align-items:center;justify-content:flex-end;gap:12px;padding:16px 24px;border-top:1px solid var(--line);color:var(--metal);font-family:'Montserrat';font-size:11.5px;}
+  .client-pagination span{min-width:110px;text-align:center;}
   .client-row.archived{opacity:.72;}
   .client-row .status-badge{display:inline-flex;margin-top:7px;padding:3px 8px;border-radius:999px;background:rgba(63,174,106,.12);color:#71d596;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;}
   .client-row.archived .status-badge{background:rgba(169,169,169,.12);color:var(--metal);}
@@ -116,6 +119,7 @@
     .client-row{align-items:flex-start;flex-direction:column;}
     .client-row .actions{width:100%;flex-wrap:wrap;}
     .client-row .actions .mini-btn{flex:1;min-width:110px;}
+    .client-pagination{justify-content:center;flex-wrap:wrap;padding:14px;}
   }
 
   .toast{
@@ -283,15 +287,19 @@
         <div class="card panel">
           <div class="card-head"><h2>Estabelecimentos Cadastrados</h2></div>
           <div class="client-tools" role="search">
-            <input id="clientSearch" type="search" placeholder="Pesquisar por nome, CNPJ, município ou RT" aria-label="Pesquisar estabelecimentos" oninput="aplicarFiltrosClientes()">
-            <select id="clientStatusFilter" aria-label="Filtrar por situação" onchange="renderClientList()">
+            <input id="clientSearch" type="search" placeholder="Pesquisar por nome, CNPJ, município ou RT" aria-label="Pesquisar estabelecimentos" oninput="agendarBuscaClientes()">
+            <select id="clientStatusFilter" aria-label="Filtrar por situação" onchange="reiniciarListaClientes()">
               <option value="ativos">Ativos</option>
               <option value="arquivados">Arquivados</option>
               <option value="todos">Todos</option>
             </select>
             <button class="btn-ghost" type="button" onclick="novoCadastro()">+ Novo cadastro</button>
           </div>
-          <div id="clientList" aria-live="polite"></div>
+          <div class="client-results-meta">
+            <span id="clientResultsSummary" aria-live="polite">Carregando estabelecimentos...</span>
+          </div>
+          <div id="clientList" aria-live="polite" aria-busy="false"></div>
+          <nav id="clientPagination" class="client-pagination" aria-label="Paginação de estabelecimentos"></nav>
         </div>
       </div>
     </div>
@@ -344,6 +352,11 @@ let canCreateDocuments = false;
 let canDeleteCompanies = false;
 let editingClientId = null;
 let clientCache = [];
+let clientPage = 0;
+let clientTotal = 0;
+let clientSearchTimer = null;
+let clientRequestSequence = 0;
+const CLIENT_PAGE_SIZE = 20;
 
 function setAuthMode(mode){
   authMode = mode;
@@ -451,10 +464,26 @@ const EMPRESA_FIELDS = 'id,nome,cnpj,email,telefone,proprietario,municipio,tipo_
 
 async function getClientes(){
   const status = document.getElementById('clientStatusFilter')?.value || 'ativos';
-  let query = supa.from('empresas').select(EMPRESA_FIELDS).order('criado_em', { ascending:false }).limit(250);
+  const rawSearch = (document.getElementById('clientSearch')?.value || '').trim();
+  const search = rawSearch.replace(/[%,()_]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80);
+  const from = clientPage * CLIENT_PAGE_SIZE;
+  const to = from + CLIENT_PAGE_SIZE - 1;
+  const requestSequence = ++clientRequestSequence;
+
+  let query = supa
+    .from('empresas')
+    .select(EMPRESA_FIELDS, { count: 'exact' })
+    .order('criado_em', { ascending:false })
+    .range(from, to);
   if(status === 'ativos') query = query.eq('ativo', true);
   if(status === 'arquivados') query = query.eq('ativo', false);
-  const { data, error } = await query;
+  if(search){
+    const pattern = `%${search}%`;
+    query = query.or(`nome.ilike.${pattern},cnpj.ilike.${pattern},municipio.ilike.${pattern},rt_nome.ilike.${pattern},tipo_estabelecimento.ilike.${pattern}`);
+  }
+
+  const { data, error, count } = await query;
+  if(requestSequence !== clientRequestSequence) return null;
   if(error){
     console.error(error);
     setConnStatus('error', 'Erro ao carregar: ' + error.message);
@@ -462,6 +491,7 @@ async function getClientes(){
   }
   setConnStatus('ok', 'Conectado ao banco de dados ORIGENIX');
   clientCache = data || [];
+  clientTotal = count || 0;
   return clientCache;
 }
 
@@ -567,46 +597,73 @@ document.querySelectorAll('.nav-item').forEach(el=>{
   el.addEventListener('click', ()=>switchTab(el.dataset.tab));
 });
 
-function aplicarFiltrosClientes(){
-  const term = (document.getElementById('clientSearch')?.value || '').trim().toLocaleLowerCase('pt-BR');
-  const filtered = !term ? clientCache : clientCache.filter(c =>
-    [c.nome,c.cnpj,c.municipio,c.rt_nome,c.tipo_estabelecimento]
-      .some(value => String(value||'').toLocaleLowerCase('pt-BR').includes(term))
-  );
-  renderClientRows(filtered);
+function agendarBuscaClientes(){
+  window.clearTimeout(clientSearchTimer);
+  clientSearchTimer = window.setTimeout(reiniciarListaClientes, 320);
+}
+
+function reiniciarListaClientes(){
+  clientPage = 0;
+  renderClientList();
+}
+
+function mudarPaginaClientes(nextPage){
+  const pageCount = Math.max(1, Math.ceil(clientTotal / CLIENT_PAGE_SIZE));
+  if(nextPage < 0 || nextPage >= pageCount || nextPage === clientPage) return;
+  clientPage = nextPage;
+  renderClientList();
+  document.getElementById('clientSearch')?.focus({ preventScroll:true });
 }
 
 function renderClientRows(list){
   const container = document.getElementById('clientList');
-  document.getElementById('clientCount').textContent = clientCache.filter(c=>c.ativo).length;
+  const summary = document.getElementById('clientResultsSummary');
+  const pagination = document.getElementById('clientPagination');
+  const first = clientTotal ? (clientPage * CLIENT_PAGE_SIZE) + 1 : 0;
+  const last = Math.min((clientPage + 1) * CLIENT_PAGE_SIZE, clientTotal);
+  const pageCount = Math.max(1, Math.ceil(clientTotal / CLIENT_PAGE_SIZE));
+  document.getElementById('clientCount').textContent = clientTotal;
+  summary.textContent = clientTotal
+    ? `Exibindo ${first}–${last} de ${clientTotal} estabelecimento${clientTotal === 1 ? '' : 's'}`
+    : 'Nenhum estabelecimento encontrado';
+
   if(list.length===0){
     const hasSearch = Boolean(document.getElementById('clientSearch')?.value.trim());
     container.innerHTML = `<div class="empty-state">${hasSearch ? 'Nenhum estabelecimento corresponde à pesquisa.' : 'Nenhum estabelecimento nesta situação.'}</div>`;
-    return;
+  } else {
+    container.innerHTML = list.map(c=>`
+      <div class="client-row ${c.ativo ? '' : 'archived'}">
+        <div class="info">
+          <b>${escapeHtml(c.nome)}</b>
+          <span>${escapeHtml(c.tipo_estabelecimento||'—')} · ${escapeHtml(c.municipio||'—')} · RT: ${escapeHtml(c.rt_nome||'—')}</span>
+          <small class="status-badge">${c.ativo ? 'Ativo' : 'Arquivado'}</small>
+        </div>
+        <div class="actions">
+          ${c.ativo ? `<button class="mini-btn edit" onclick="editarCliente('${c.id}')">Editar</button>` : ''}
+          ${c.ativo && canCreateDocuments ? `<button class="mini-btn emit" onclick="gerarDocumento('${c.id}')">Gerar documento</button>` : ''}
+          ${canDeleteCompanies ? (c.ativo
+            ? `<button class="mini-btn danger" onclick="alterarSituacaoCliente('${c.id}', false)">Arquivar</button>`
+            : `<button class="mini-btn" onclick="alterarSituacaoCliente('${c.id}', true)">Restaurar</button>`) : ''}
+        </div>
+      </div>
+    `).join('');
   }
-  container.innerHTML = list.map(c=>`
-    <div class="client-row ${c.ativo ? '' : 'archived'}">
-      <div class="info">
-        <b>${escapeHtml(c.nome)}</b>
-        <span>${escapeHtml(c.tipo_estabelecimento||'—')} · ${escapeHtml(c.municipio||'—')} · RT: ${escapeHtml(c.rt_nome||'—')}</span>
-        <small class="status-badge">${c.ativo ? 'Ativo' : 'Arquivado'}</small>
-      </div>
-      <div class="actions">
-        ${c.ativo ? `<button class="mini-btn edit" onclick="editarCliente('${c.id}')">Editar</button>` : ''}
-        ${c.ativo && canCreateDocuments ? `<button class="mini-btn emit" onclick="gerarDocumento('${c.id}')">Gerar documento</button>` : ''}
-        ${canDeleteCompanies ? (c.ativo
-          ? `<button class="mini-btn danger" onclick="alterarSituacaoCliente('${c.id}', false)">Arquivar</button>`
-          : `<button class="mini-btn" onclick="alterarSituacaoCliente('${c.id}', true)">Restaurar</button>`) : ''}
-      </div>
-    </div>
-  `).join('');
+
+  pagination.innerHTML = pageCount > 1 ? `
+    <button class="mini-btn" type="button" onclick="mudarPaginaClientes(${clientPage-1})" ${clientPage===0 ? 'disabled' : ''} aria-label="Página anterior">← Anterior</button>
+    <span>Página <b>${clientPage+1}</b> de ${pageCount}</span>
+    <button class="mini-btn" type="button" onclick="mudarPaginaClientes(${clientPage+1})" ${clientPage>=pageCount-1 ? 'disabled' : ''} aria-label="Próxima página">Próxima →</button>
+  ` : '';
 }
 
 async function renderClientList(){
   const container = document.getElementById('clientList');
+  container.setAttribute('aria-busy', 'true');
   container.innerHTML = '<div class="empty-state">Carregando estabelecimentos...</div>';
-  await getClientes();
-  aplicarFiltrosClientes();
+  const list = await getClientes();
+  container.setAttribute('aria-busy', 'false');
+  if(list === null) return;
+  renderClientRows(list);
 }
 
 async function alterarSituacaoCliente(id, restaurar){
@@ -649,9 +706,12 @@ async function sha256(text){
 
 async function gerarDocumento(clientId){
   if(!canCreateDocuments){ showToast('Seu perfil não possui permissão para emitir documentos.', true); return; }
-  const list = await getClientes();
-  const cliente = list.find(c=>c.id===clientId);
-  if(!cliente) return;
+  let cliente = clientCache.find(c=>c.id===clientId);
+  if(!cliente){
+    const { data, error } = await supa.from('empresas').select(EMPRESA_FIELDS).eq('id', clientId).single();
+    if(error || !data){ showToast('Não foi possível carregar o estabelecimento.', true); return; }
+    cliente = data;
+  }
 
   const { data: codigo, error: codigoError } = await supa.rpc('proximo_codigo_documento', {
     empresa_id: cliente.id,
