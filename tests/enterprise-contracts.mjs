@@ -134,7 +134,7 @@ const migrationNames = (await readdir(migrationDir))
   .sort();
 
 contract("migrations são sequenciais e completas", () => {
-  assert.equal(migrationNames.length, 19, "esperadas exatamente 19 migrations");
+  assert.equal(migrationNames.length, 20, "esperadas exatamente 20 migrations");
   migrationNames.forEach((name, index) => {
     const expected = String(index + 1).padStart(3, "0");
     assert.ok(name.startsWith(`${expected}_`), `sequência inválida em ${name}`);
@@ -375,6 +375,31 @@ contract("operações principais geram auditoria no banco", () => {
     "'DOCUMENTO_STATUS_ALTERADO'",
     "revoke all on function private.auditar_empresa_operacao",
     "revoke all on function private.auditar_documento_operacao",
+  ]);
+});
+
+contract("exportação da auditoria é limitada, rastreável e imutável", () => {
+  includesAll(migrations, [
+    "create table if not exists public.auditoria_exportacoes",
+    "total_registros between 0 and 2000",
+    "auditoria_exportacoes_select",
+    "auditoria_exportacoes_insert",
+    "grant select, insert on table public.auditoria_exportacoes",
+    "private.auditar_exportacao",
+    "create trigger auditar_exportacao",
+    "'AUDITORIA_EXPORTADA'",
+    "revoke all on function private.auditar_exportacao",
+  ]);
+  includesAll(files["origenix-sistema-login.html"], [
+    "id=\"auditExportButton\"",
+    "async function exportarAuditoriaCSV",
+    "function valorSeguroCSV",
+    "/^[=+\\-@\\t\\r]/",
+    ".limit(2000)",
+    "from('auditoria_exportacoes').insert",
+    "Download cancelado.",
+    "URL.revokeObjectURL",
+    "setButtonLoading",
   ]);
 });
 
