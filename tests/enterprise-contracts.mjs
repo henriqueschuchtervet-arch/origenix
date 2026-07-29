@@ -34,6 +34,7 @@ const requiredFiles = [
   "origenix-pacs.html",
   "recuperar-senha.html",
   "ui-enhancements.js",
+  "origenix-supabase.js",
   "origenix-v4.css",
   "_headers",
   "README.md",
@@ -541,6 +542,32 @@ contract("marcas são assets compartilhados e cacheáveis", () => {
     "/assets/*",
     "Cache-Control: public, max-age=31536000, immutable",
   ]);
+});
+
+contract("configuração Supabase é centralizada e validada", () => {
+  new vm.Script(files["origenix-supabase.js"], { filename: "origenix-supabase.js" });
+  includesAll(files["origenix-supabase.js"], [
+    "const url = "https://kdlyjcaxopypqeitazan.supabase.co"",
+    "const publishableKey = "sb_publishable_",
+    "typeof factory !== "function"",
+    "window.OrigenixSupabase = Object.freeze",
+  ]);
+  [
+    "index.html",
+    "origenix-dashboard-v3.html",
+    "origenix-emissao-v3.html",
+    "origenix-sistema-login.html",
+    "origenix-pacs.html",
+    "recuperar-senha.html",
+  ].forEach((path) => {
+    includesAll(files[path], [
+      "origenix-supabase.js?v=1.0",
+      "window.OrigenixSupabase.createClient()",
+    ]);
+    assert.ok(!files[path].includes("sb_publishable_"), `${path} ainda repete a chave pública`);
+    assert.ok(!files[path].includes("kdlyjcaxopypqeitazan.supabase.co"), `${path} ainda repete a URL`);
+    assert.ok(!files[path].includes("window.supabase.createClient"), `${path} ignora o módulo compartilhado`);
+  });
 });
 
 const failures = results.filter((result) => !result.ok);
