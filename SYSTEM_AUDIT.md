@@ -531,3 +531,34 @@ modifica dados e mantém a integração atual com Supabase, GitHub e Netlify.
 - Login do sistema validado no DOM publicado: ações aparecem imediatamente depois de `#btnAuth` e as abas permanecem consecutivas.
 - O preview publicou `ui-enhancements.js?v=4.4`.
 - GitHub Actions concluiu com sucesso os 33 contratos enterprise.
+
+## Ciclo 22 — assets compartilhados e redução de peso
+
+### Diagnóstico
+
+- Quatro páginas continham imagens PNG codificadas em Base64 dentro do próprio HTML.
+- A mesma marca de 217.600 caracteres aparecia quatro vezes.
+- A assinatura de 143.992 caracteres aparecia duas vezes.
+- O HTML precisava baixar, analisar e decodificar essas cópias a cada navegação.
+
+### Implementação
+
+- As duas imagens foram extraídas para `assets/origenix-logo-v1.svg` e `assets/origenix-brand-v1.svg`.
+- Página inicial, dashboard, emissão e sistema passaram a reutilizar os mesmos assets.
+- Os nomes são versionados para permitir cache imutável sem impedir futuras atualizações.
+- A Netlify recebeu política de cache de um ano para `/assets/*`.
+- Um contrato automatizado impede o retorno de imagens Base64 nessas páginas.
+
+### Resultado mensurável
+
+- Peso conjunto dos quatro HTMLs: de 1.581.974 para 206.026 caracteres.
+- Redução de 1.375.948 caracteres, aproximadamente 87% do conteúdo HTML.
+- Todas as cinco referências visuais reutilizam apenas dois arquivos cacheáveis.
+- O código visual e os fluxos de autenticação foram preservados.
+
+### Verificações
+
+- 34 contratos enterprise aprovados no GitHub Actions.
+- Nenhuma ocorrência de `data:image/` permaneceu nas quatro páginas.
+- Assets carregaram no preview da Netlify com dimensões válidas.
+- Login do dashboard e do sistema continuou com ações abaixo de `#btnAuth`.
