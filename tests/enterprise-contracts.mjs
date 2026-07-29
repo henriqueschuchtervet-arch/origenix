@@ -119,9 +119,12 @@ contract("camada de UX possui acessibilidade e feedback", () => {
     "openFormDialog",
     "setButtonLoading",
     "aria-modal",
-    "focus-visible",
     "MutationObserver",
   ]);
+  assert.ok(
+    files["origenix-v4.css"].includes(":focus-visible"),
+    "estado de foco visível ausente do CSS compartilhado",
+  );
 });
 
 const migrationDir = join(root, "supabase", "migrations");
