@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR" style="background:#000;">
+<html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,198 +9,29 @@
 <script src="https://unpkg.com/@supabase/supabase-js@2.111.0/dist/umd/supabase.js" data-supabase-version="2.111.0" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="origenix-supabase.js?v=1.0"></script>
 <script src="origenix-auth.js?v=1.0"></script>
-<link rel="stylesheet" href="origenix-v4.css?v=4.3" data-ox-v4>
-<style>
-  :root{
-    --black:#000000; --black-2:#0b0b0b; --graphite:#171717; --graphite-2:#1f1f1f;
-    --metal:#a9a9a9; --silver:#e5e5e5; --white:#ffffff;
-    --red:#d10000; --red-deep:#8b0000; --red-accent:#ff1a1a;
-    --glass:rgba(4,4,4,0.94); --glass-line:rgba(255,60,60,0.18);
-    --green:#3fae6a; --amber:#d19a1a;
-  }
-  *{margin:0;padding:0;box-sizing:border-box;}
-  body{background-color:#000000;min-height:100vh;color:var(--white);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;font-size:14px;min-height:100vh;
-  }
-  .orbitron{font-family:'Orbitron',sans-serif;text-transform:uppercase;font-weight:700;letter-spacing:.5px;}
-  .mono{font-family:'Montserrat',sans-serif;}
-  a{color:inherit;text-decoration:none;}
-  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;}
-  :focus-visible{outline:1.5px solid var(--red-accent);outline-offset:2px;}
-  ::-webkit-scrollbar{width:8px;height:8px;}
-  ::-webkit-scrollbar-thumb{background:var(--graphite-2);border-radius:8px;}
-
-  .glass{background:#121214;border:1px solid rgba(255,45,45,0.25);border-radius:12px;box-shadow:0 1px 0 rgba(255,255,255,0.05) inset, 0 18px 40px -20px rgba(0,0,0,0.9);}
-
-  .app{display:grid;grid-template-columns:264px 1fr;min-height:100vh;}
-
-  /* SIDEBAR */
-  .sidebar{margin:16px 0 16px 16px;padding:24px 16px;display:flex;flex-direction:column;position:sticky;top:16px;height:calc(100vh - 32px);}
-  .side-brand{display:flex;align-items:center;gap:10px;padding:6px 8px 28px;}
-  .bull-mark{width:34px;height:34px;flex-shrink:0;object-fit:contain;border-radius:50%;}
-  .side-brand .name{font-family:'Orbitron';font-size:16px;font-weight:800;letter-spacing:1px;}
-  .side-brand .name .x{color:var(--red-accent);}
-
-  .side-nav{display:flex;flex-direction:column;gap:3px;flex:1;}
-  .nav-group-label{font-family:'Montserrat';font-size:10px;letter-spacing:1.8px;color:var(--metal);text-transform:uppercase;padding:18px 10px 8px;font-weight:600;}
-  .nav-item{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:9px;font-size:13px;color:var(--metal);transition:.15s;}
-  .nav-item svg{width:17px;height:17px;flex-shrink:0;}
-  .nav-item:hover{background:rgba(255,255,255,0.05);color:var(--white);}
-  .nav-item.active{background:linear-gradient(90deg, rgba(209,0,0,0.22), rgba(209,0,0,0.04));color:var(--white);box-shadow:inset 2px 0 0 var(--red-accent);}
-  .nav-item .count{margin-left:auto;font-family:'Montserrat';font-size:11px;color:var(--metal);}
-  .side-user{display:flex;align-items:center;gap:10px;padding:14px 10px;border-top:1px solid var(--glass-line);margin-top:10px;}
-  .avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(160deg,var(--red-deep),var(--red-accent));display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;color:#fff;flex-shrink:0;}
-  .side-user .name2{font-size:13px;font-weight:500;}
-  .side-user .role{font-size:11px;color:var(--metal);}
-
-  /* MAIN */
-  .main{padding:16px;}
-  .topbar{padding:0 26px;height:70px;display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
-  .topbar h1{font-family:'Orbitron';font-size:18px;font-weight:700;letter-spacing:.5px;}
-  .topbar .sub{font-size:11.5px;color:var(--metal);margin-top:3px;font-family:'Montserrat';}
-  .topbar-right{display:flex;align-items:center;gap:16px;}
-  .search{display:flex;align-items:center;gap:8px;border-radius:10px;padding:10px 14px;width:250px;}
-  .search svg{width:15px;height:15px;color:var(--metal);}
-  .search input{background:none;border:none;color:var(--white);font-size:13px;width:100%;}
-  .search input::placeholder{color:var(--metal);}
-  .icon-btn{position:relative;width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:10px;color:var(--metal);}
-  .icon-btn svg{width:16px;height:16px;}
-  .icon-btn .dot{position:absolute;top:8px;right:9px;width:6px;height:6px;background:var(--red-accent);border-radius:50%;box-shadow:0 0 6px var(--red-accent);}
-
-  .content{padding:0 10px 40px;}
-
-  /* KPI ROW */
-  .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;}
-  .kpi{padding:22px 24px;}
-  .kpi .lbl{font-size:11.5px;color:var(--metal);font-family:'Montserrat';letter-spacing:.3px;}
-  .kpi .val{font-family:'Orbitron';font-size:28px;margin-top:10px;font-weight:700;}
-  .kpi .delta{font-family:'Montserrat';font-size:11px;margin-top:8px;display:flex;align-items:center;gap:5px;}
-  .delta.up{color:var(--green);}
-  .delta.warn{color:var(--amber);}
-
-  .grid-2{display:grid;grid-template-columns:1.6fr 1fr;gap:16px;align-items:start;}
-  @media (max-width:1100px){.grid-2{grid-template-columns:1fr;}}
-
-  .card{margin-bottom:16px;overflow:hidden;}
-  .card-head{display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid var(--glass-line);}
-  .card-head h2{font-family:'Orbitron';font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;}
-  .card-head .link{font-size:11.5px;color:var(--red-accent);font-family:'Montserrat';}
-
-  table{width:100%;border-collapse:collapse;}
-  thead th{text-align:left;font-size:10.5px;letter-spacing:.6px;text-transform:uppercase;color:var(--metal);font-weight:600;padding:12px 24px;border-bottom:1px solid var(--glass-line);font-family:'Montserrat';}
-  tbody td{padding:15px 24px;font-size:13px;border-bottom:1px solid var(--glass-line);}
-  tbody tr:last-child td{border-bottom:none;}
-  tbody tr:hover{background:rgba(255,255,255,0.03);}
-  .client-cell{display:flex;flex-direction:column;}
-  .client-cell b{font-weight:500;}
-  .client-cell span{font-size:11px;color:var(--metal);margin-top:2px;font-family:'Montserrat';}
-  .badge{font-family:'Montserrat';font-weight:600;font-size:10px;padding:5px 10px;border-radius:20px;letter-spacing:.3px;white-space:nowrap;border:1px solid transparent;}
-  .badge.andamento{background:rgba(209,0,0,0.14);color:var(--red-accent);border-color:rgba(209,0,0,0.3);}
-  .badge.revisao{background:rgba(209,154,26,0.14);color:var(--amber);border-color:rgba(209,154,26,0.3);}
-  .badge.concluido{background:rgba(63,174,106,0.14);color:var(--green);border-color:rgba(63,174,106,0.3);}
-  .badge.atraso{background:rgba(255,26,26,0.16);color:var(--red-accent);border-color:rgba(255,26,26,0.4);}
-  .progress-track{width:70px;height:5px;background:var(--graphite-2);border-radius:8px;overflow:hidden;}
-  .progress-fill{height:100%;background:linear-gradient(90deg,var(--red-deep),var(--red-accent));border-radius:8px;}
-
-  .deadline{display:flex;justify-content:space-between;align-items:center;padding:15px 24px;border-bottom:1px solid var(--glass-line);gap:12px;}
-  .deadline:last-child{border-bottom:none;}
-  .deadline .info b{font-size:13px;font-weight:500;display:block;}
-  .deadline .info span{font-size:11px;color:var(--metal);font-family:'Montserrat';}
-  .deadline .days{font-family:'Montserrat';font-weight:600;font-size:12px;text-align:right;flex-shrink:0;}
-  .deadline .days.soon{color:var(--red-accent);}
-  .deadline .days.ok{color:var(--metal);}
-
-  .notif{display:flex;gap:12px;padding:15px 24px;border-bottom:1px solid var(--glass-line);}
-  .notif:last-child{border-bottom:none;}
-  .notif .dot-ico{width:7px;height:7px;border-radius:50%;background:var(--red-accent);margin-top:6px;flex-shrink:0;box-shadow:0 0 6px var(--red-accent);}
-  .notif p{font-size:12.5px;line-height:1.55;color:var(--metal);}
-  .notif p b{color:var(--white);font-weight:500;}
-  .notif .time{font-family:'Montserrat';font-size:10.5px;color:var(--metal);margin-top:4px;display:block;opacity:.7;}
-
-  .timeline{padding:8px 24px 22px;position:relative;}
-  .t-item{display:grid;grid-template-columns:34px 1fr;gap:16px;padding:16px 0;position:relative;}
-  .t-item::before{content:'';position:absolute;left:16px;top:44px;bottom:-4px;width:1px;background:var(--glass-line);}
-  .t-item:last-child::before{display:none;}
-  .t-ico{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;z-index:1;}
-  .t-ico svg{width:16px;height:16px;}
-  .t-ico.ok{background:rgba(63,174,106,0.14);color:var(--green);border:1px solid rgba(63,174,106,0.3);}
-  .t-ico.warn{background:rgba(255,26,26,0.14);color:var(--red-accent);border:1px solid rgba(255,26,26,0.35);}
-  .t-ico.info{background:rgba(169,169,169,0.14);color:var(--metal);border:1px solid rgba(169,169,169,0.3);}
-  .t-item .time{font-family:'Montserrat';font-size:10px;color:var(--metal);letter-spacing:.5px;text-transform:uppercase;margin-bottom:3px;}
-  .t-item .txt b{font-weight:600;font-size:13px;}
-  .t-item .txt span{font-size:12.5px;color:var(--metal);display:block;margin-top:3px;line-height:1.5;}
-  /* LOGIN */
-  .mini-btn{border:1px solid var(--line);padding:8px 14px;border-radius:8px;font-family:'Montserrat';font-size:11.5px;font-weight:600;color:var(--metal);}
-  .mini-btn:hover{background:rgba(255,255,255,0.05);}
-  .btn-primary{background:linear-gradient(135deg,var(--red-deep),var(--red-accent));color:#fff;padding:13px 26px;border-radius:9px;font-family:'Montserrat';font-weight:700;font-size:13px;box-shadow:0 10px 30px -14px rgba(209,0,0,0.7);display:flex;align-items:center;}
-  .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
-  .login-card{width:100%;max-width:380px;padding:32px 30px;}
-  .login-tabs{display:flex;gap:8px;background:#0a0a0a;border-radius:10px;padding:4px;}
-  .login-tab{flex:1;padding:10px;border-radius:8px;font-family:'Montserrat';font-weight:600;font-size:12.5px;color:var(--metal);}
-  .login-tab.active{background:var(--red-accent);color:#fff;}
-  .login-msg{margin-top:14px;font-family:'Montserrat';font-size:12px;text-align:center;color:var(--metal);min-height:16px;}
-  .login-msg.error{color:var(--red-accent);}
-  .login-msg.ok{color:var(--green);}
-  .l-field{margin-top:14px;display:flex;flex-direction:column;gap:6px;}
-  .l-field label{font-family:'Montserrat';font-size:10.5px;color:var(--metal);letter-spacing:.4px;text-transform:uppercase;font-weight:600;}
-  .l-field input{background:#0a0a0a;border:1px solid var(--line);border-radius:9px;padding:11px 13px;color:var(--white);font-size:13.5px;font-family:'Montserrat';width:100%;}
-  .l-field input:focus{border-color:var(--red-accent);}
-
-  .conn-status{padding:0 26px 12px;font-family:'Montserrat';font-size:11px;color:var(--metal);display:flex;align-items:center;gap:8px;}
-  .conn-status .dot2{width:7px;height:7px;border-radius:50%;background:var(--amber);flex-shrink:0;}
-  .conn-status.ok .dot2{background:var(--green);}
-  .conn-status.error .dot2{background:var(--red-accent);}
-
-  .empty-row{padding:40px 24px;text-align:center;color:var(--metal);font-family:'Montserrat';font-size:12.5px;}
-  .lead-row{display:flex;justify-content:space-between;align-items:flex-start;padding:14px 22px;border-bottom:1px solid var(--line);gap:12px;}
-  .lead-row:last-child{border-bottom:none;}
-  .lead-row .info b{font-size:13px;font-weight:600;display:block;}
-  .lead-row .info span{font-size:11.5px;color:var(--metal);font-family:'Montserrat';display:block;margin-top:2px;}
-  .lead-row .time2{font-family:'Montserrat';font-size:10px;color:var(--metal);opacity:.7;white-space:nowrap;}
-  .lead-badge{font-family:'Montserrat';font-weight:600;font-size:9.5px;padding:4px 9px;border-radius:20px;white-space:nowrap;border:1px solid transparent;}
-  .lead-badge.novo{background:rgba(255,26,26,0.16);color:var(--red-accent);border-color:rgba(255,26,26,0.4);}
-  .lead-badge.contatado{background:rgba(63,174,106,0.14);color:var(--green);border-color:rgba(63,174,106,0.3);}
-  .quick-link{display:flex;align-items:center;gap:12px;padding:16px 22px;border-bottom:1px solid var(--line);font-family:'Montserrat';font-size:13px;color:var(--white);}
-  .quick-link:last-child{border-bottom:none;}
-  .quick-link svg{width:17px;height:17px;color:var(--red-accent);flex-shrink:0;}
-  .quick-link:hover{background:rgba(255,255,255,0.03);}
-
-  .kpi-row a.kpi{display:block;transition:transform .2s ease,border-color .2s ease;}
-  .kpi-row a.kpi:hover{transform:translateY(-2px);border-color:rgba(255,60,60,.42);}
-  .card-action{font-size:11px;font-weight:700;color:#ff4a4a;}
-  .operational-row{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.08);}
-  .operational-row:last-child{border-bottom:0;}
-  .operational-marker{width:8px;height:8px;border-radius:999px;background:var(--amber);flex:0 0 auto;}
-  .operational-marker.critical{background:var(--red-accent);box-shadow:0 0 0 4px rgba(255,26,26,.12);}
-  .operational-info{min-width:0;flex:1;}
-  .operational-info b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .operational-info span{display:block;margin-top:3px;font-size:11px;color:var(--metal);}
-  .operational-time{font-size:11px;color:var(--metal);text-align:right;flex:0 0 auto;}
-  .empty-row a{color:#ff3030;font-weight:700;}
-
-  .panel{background:var(--graphite);border:1px solid var(--line);border-radius:12px;box-shadow:0 1px 0 rgba(255,255,255,.05) inset,0 18px 40px -20px rgba(0,0,0,.8);}
-  .login-card.panel{background:linear-gradient(180deg,#171719,#121214);border-color:rgba(255,45,45,.28);}
-</style>
+<link rel="stylesheet" href="origenix-v4.css?v=4.5" data-ox-v4>
+<link rel="stylesheet" href="origenix-dashboard.css?v=1.0">
 </head>
-<body style="background:#000000;"><div style="position:fixed;top:0;left:0;width:100%;height:100%;background:#000000;z-index:-1;"></div>
+<body><div class="page-backdrop" aria-hidden="true"></div>
 
 <div id="loginView" class="login-wrap">
   <div class="login-card panel">
-    <div class="side-brand" style="padding:0 0 24px;justify-content:center;">
-      <img src="assets/origenix-logo-v1.svg" alt="ORIGENIX" style="width:34px;height:34px;object-fit:contain;border-radius:50%;">
+    <div class="side-brand login-brand">
+      <img src="assets/origenix-logo-v1.svg" alt="ORIGENIX" class="login-logo">
       <div class="name">ORIGENI<span class="x">X</span></div>
     </div>
     <div class="login-tabs">
-      <button class="login-tab active" data-mode="login" onclick="setAuthMode('login')">Entrar</button>
-      <button class="login-tab" data-mode="signup" onclick="setAuthMode('signup')">Criar Conta</button>
+      <button class="login-tab active" data-mode="login" type="button">Entrar</button>
+      <button class="login-tab" data-mode="signup" type="button">Criar Conta</button>
     </div>
     <div class="l-field"><label>E-mail</label><input id="auth_email" type="email" placeholder="seu@email.com"></div>
     <div class="l-field"><label>Senha</label><input id="auth_password" type="password" placeholder="••••••••"></div>
-    <button class="btn-primary" id="btnAuth" style="width:100%;justify-content:center;margin-top:20px;" onclick="handleAuth()">Entrar</button>
+    <button class="btn-primary auth-submit" id="btnAuth" type="button">Entrar</button>
     <div class="login-msg" id="loginMsg"></div>
   </div>
 </div>
 
-<div class="app" id="mainApp" style="display:none;">
+<div class="app is-hidden" id="mainApp">
 
   <aside class="sidebar glass">
     <div class="side-brand">
@@ -220,22 +51,22 @@
       <a class="nav-item" href="origenix-pacs.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16v16H4zM8 9h8M8 13h8M8 17h5"/></svg>PACs &amp; APPCC</a>
     </nav>
 
-    <div class="side-user" style="flex-direction:column;align-items:stretch;gap:8px;">
-      <div style="display:flex;align-items:center;gap:10px;">
+    <div class="side-user side-user-stack">
+      <div class="side-user-identity">
         <div class="avatar">MA</div>
-        <div style="min-width:0;">
-          <div class="name2" id="userEmail" style="word-break:break-all;font-size:12px;">—</div>
+        <div class="side-user-copy">
+          <div class="name2" id="userEmail" class="user-email">—</div>
           <div class="role">Conectado</div>
         </div>
       </div>
-      <button class="mini-btn" style="width:100%;" onclick="handleLogout()">Sair</button>
+      <button class="mini-btn logout-button" id="logoutButton" type="button">Sair</button>
     </div>
   </aside>
 
   <main class="main">
     <div class="conn-status" id="connStatus"><span class="dot2"></span><span id="connMsg">Conectando ao banco de dados...</span></div>
     <div class="topbar glass">
-      <div style="padding-left:6px;">
+      <div class="topbar-title">
         <h1>Visão Geral</h1>
         <div class="sub">Terça-feira, 30 de junho de 2026</div>
       </div>
@@ -244,7 +75,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
           <input type="text" placeholder="Buscar cliente, projeto, ART...">
         </div>
-        <button class="icon-btn glass" aria-label="Abrir notificações" onclick="location.href='origenix-sistema-login.html?view=notifications'">
+        <button class="icon-btn glass" id="notificationsButton" type="button" aria-label="Abrir notificações">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>
           <span class="dot" id="topAlertDot"></span>
         </button>
@@ -348,186 +179,7 @@
 
 </div>
 
-<script>
-let supa = null;
-try { supa = window.OrigenixSupabase.createClient(); }
-catch(e){ console.error('Falha ao iniciar Supabase', e); }
-
-let authMode = 'login';
-let currentUser = null;
-
-function setAuthMode(mode){
-  authMode = mode;
-  document.querySelectorAll('.login-tab').forEach(el=>el.classList.toggle('active', el.dataset.mode===mode));
-  document.getElementById('btnAuth').textContent = mode==='login' ? 'Entrar' : 'Criar Conta';
-  document.getElementById('loginMsg').textContent = '';
-}
-
-function setLoginMsg(msg, type){
-  const el = document.getElementById('loginMsg');
-  el.textContent = msg;
-  el.className = 'login-msg' + (type ? ' '+type : '');
-}
-
-
-
-async function handleAuth(){
-  const emailInput = document.getElementById('auth_email');
-  const passwordInput = document.getElementById('auth_password');
-  const validation = window.OrigenixAuth.normalizeCredentials(emailInput.value, passwordInput.value);
-  if(!validation.ok){
-    setLoginMsg(validation.message, 'error');
-    (validation.field === 'email' ? emailInput : passwordInput).focus();
-    return;
-  }
-
-  const btn = document.getElementById('btnAuth');
-  const originalLabel = btn.textContent;
-  btn.disabled = true;
-  btn.textContent = authMode === 'login' ? 'Entrando...' : 'Criando conta...';
-  setLoginMsg('');
-
-  try {
-    const result = await window.OrigenixAuth.authenticate({
-      client: supa,
-      mode: authMode === 'login' ? 'login' : 'signup',
-      email: validation.email,
-      password: validation.password,
-      emailRedirectTo: authMode === 'signup'
-        ? new URL('origenix-dashboard-v3.html', location.href).href
-        : undefined,
-    });
-    if(!result.ok){ setLoginMsg(result.message, 'error'); return; }
-    if(result.requiresEmailConfirmation){
-      passwordInput.value = '';
-      setLoginMsg('Conta criada! Confira seu e-mail para confirmar o acesso.', 'ok');
-    }
-  } finally {
-    btn.disabled = false;
-    btn.textContent = originalLabel;
-  }
-}
-
-async function handleLogout(){
-  const { error } = await window.OrigenixAuth.signOut(supa);
-  if(error){ console.error(error); return; }
-  currentUser = null;
-  document.getElementById('mainApp').style.display = 'none';
-  document.getElementById('loginView').style.display = 'flex';
-  document.getElementById('auth_password').value = '';
-  document.getElementById('auth_email').focus();
-}
-
-async function onAuthenticated(user){
-  if(!user) return;
-  const sameUser = currentUser && currentUser.id === user.id;
-  currentUser = user;
-  document.getElementById('userEmail').textContent = user.email || 'Usuário';
-  document.getElementById('loginView').style.display = 'none';
-  document.getElementById('mainApp').style.display = 'grid';
-  if(!sameUser) await loadDashboard();
-}
-
-async function initAuth(){
-  await window.OrigenixAuth.observeSession({
-    client: supa,
-    onAuthenticated,
-    onSignedOut(){
-      currentUser = null;
-      document.getElementById('mainApp').style.display = 'none';
-      document.getElementById('loginView').style.display = 'flex';
-    },
-    onMissingSession(){
-      document.getElementById('loginView').style.display = 'flex';
-      document.getElementById('mainApp').style.display = 'none';
-    },
-    onUnavailable(){ setLoginMsg('Não foi possível conectar ao serviço de autenticação.', 'error'); },
-    onError(error){ console.error(error); },
-  });
-}
-
-function setConnStatus(state, msg){
-  const el = document.getElementById('connStatus');
-  el.classList.remove('ok','error');
-  if(state) el.classList.add(state);
-  document.getElementById('connMsg').textContent = msg;
-}
-
-function escapeHtml(str){
-  const d = document.createElement('div');
-  d.textContent = str||'';
-  return d.innerHTML;
-}
-
-function timeAgo(dateStr){
-  const diff = (Date.now() - new Date(dateStr).getTime()) / 1000;
-  if(diff < 60) return 'agora mesmo';
-  if(diff < 3600) return `há ${Math.floor(diff/60)} min`;
-  if(diff < 86400) return `há ${Math.floor(diff/3600)}h`;
-  return `há ${Math.floor(diff/86400)}d`;
-}
-
-function operationalRow(title,meta,time,critical=false){
-  return `<div class="operational-row"><span class="operational-marker ${critical?'critical':''}"></span><div class="operational-info"><b>${escapeHtml(title)}</b><span>${escapeHtml(meta)}</span></div><div class="operational-time">${escapeHtml(time)}</div></div>`;
-}
-
-function formatDashboardDeadline(value){
-  if(!value) return 'Sem prazo';
-  const date=new Date(value); const diff=Math.ceil((date-Date.now())/86400000);
-  if(diff<0) return 'Vencida há '+Math.abs(diff)+'d';
-  if(diff===0) return 'Hoje';
-  if(diff===1) return 'Amanhã';
-  return 'Em '+diff+' dias';
-}
-
-async function loadDashboard(){
-  setConnStatus(null,'Atualizando indicadores operacionais...');
-  const perfil=await supa.from('perfis').select('papel').eq('user_id',currentUser.id).maybeSingle();
-  const isAdmin=perfil.data?.papel==='administrador';
-  const today=new Date(); today.setHours(0,0,0,0);
-  const nextWeek=new Date(today); nextWeek.setDate(nextWeek.getDate()+7);
-  const taskFields='id,empresa_id,titulo,status,prioridade,prazo,empresas(nome)';
-  const documentFields='id,titulo,tipo,codigo,status,criado_em,empresas(nome)';
-  const requests=[
-    supa.from('empresas').select('id,nome,municipio,tipo_estabelecimento,rt_nome,inspecao',{count:'exact'}).order('criado_em',{ascending:false}).limit(8),
-    supa.from('documentos').select(documentFields,{count:'exact'}).order('criado_em',{ascending:false}).limit(8),
-    supa.from('tarefas').select(taskFields,{count:'exact'}).in('status',['pendente','em_andamento']).gte('prazo',today.toISOString()).lt('prazo',nextWeek.toISOString()).order('prazo').limit(8),
-    supa.from('tarefas').select(taskFields,{count:'exact'}).in('status',['pendente','em_andamento']).lt('prazo',new Date().toISOString()).order('prazo').limit(6),
-    supa.from('documentos').select(documentFields,{count:'exact'}).eq('status','em_revisao').order('criado_em').limit(6)
-  ];
-  if(isAdmin) requests.push(
-    supa.from('leads').select('id,nome,empresa,telefone,email,status,criado_em',{count:'exact'}).order('criado_em',{ascending:false}).limit(8),
-    supa.from('leads').select('id',{count:'exact',head:true}).or('status.eq.novo,status.is.null')
-  );
-  const [empresasRes,documentosRes,agendaRes,overdueRes,reviewRes,leadsRes={data:[],count:0},novosRes={count:0}]=await Promise.all(requests);
-  const results=[perfil,empresasRes,documentosRes,agendaRes,overdueRes,reviewRes,leadsRes,novosRes];
-  if(results.some(result=>result?.error)){
-    results.filter(result=>result?.error).forEach(result=>console.error('Falha ao carregar dashboard',result.error));
-    setConnStatus('error','Alguns dados não foram carregados. Tente atualizar.');
-  }else setConnStatus('ok',isAdmin?'Conectado como Administrador':'Conectado com acesso protegido');
-
-  const empresas=empresasRes.data||[],documentos=documentosRes.data||[],agenda=agendaRes.data||[],overdue=overdueRes.data||[],reviews=reviewRes.data||[],leads=leadsRes.data||[];
-  const alertCount=(overdueRes.count||0)+(reviewRes.count||0);
-  document.getElementById('kpiEmpresas').textContent=empresasRes.count??0;
-  document.getElementById('sidebarClientes').textContent=empresasRes.count??0;
-  document.getElementById('kpiDocumentos').textContent=documentosRes.count??0;
-  document.getElementById('kpiTarefasVencidas').textContent=overdueRes.count??0;
-  document.getElementById('kpiDocumentosRevisao').textContent=reviewRes.count??0;
-  document.getElementById('sidebarTasks').textContent=(agendaRes.count||0)+(overdueRes.count||0);
-  document.getElementById('sidebarAlerts').textContent=alertCount;
-  document.getElementById('topAlertDot').style.display=alertCount?'block':'none';
-
-  document.getElementById('empresasTableBody').innerHTML=empresas.length?empresas.map(e=>`<tr><td class="client-cell"><b>${escapeHtml(e.nome)}</b><span>${escapeHtml(e.municipio||'—')}</span></td><td>${escapeHtml(e.tipo_estabelecimento||'—')}</td><td>${escapeHtml(e.rt_nome||'—')}</td><td>${escapeHtml(e.inspecao||'—')}</td></tr>`).join(''):'<tr><td colspan="4" class="empty-row">Nenhum estabelecimento cadastrado. <a href="origenix-sistema-login.html?view=new">Cadastrar agora</a></td></tr>';
-  document.getElementById('documentosList').innerHTML=documentos.length?documentos.map(d=>`<a class="lead-row" href="origenix-sistema-login.html?view=documents"><div class="info"><b>${escapeHtml(d.titulo||d.tipo||'Documento')}</b><span>${escapeHtml(d.empresas?.nome||'—')} · ${escapeHtml(d.codigo||'')}</span></div><div class="time2">${timeAgo(d.criado_em)}</div></a>`).join(''):'<div class="empty-row">Nenhum documento emitido ainda.</div>';
-  document.getElementById('agendaList').innerHTML=agenda.length?agenda.map(task=>operationalRow(task.titulo||'Tarefa',task.empresas?.nome||'Empresa indisponível',formatDashboardDeadline(task.prazo),task.prioridade==='critica')).join(''):'<div class="empty-row">Nenhum prazo nos próximos 7 dias. <a href="origenix-sistema-login.html?view=tasks">Criar tarefa</a></div>';
-  const alerts=[...overdue.map(task=>({title:task.titulo||'Tarefa vencida',meta:task.empresas?.nome||'Empresa indisponível',time:formatDashboardDeadline(task.prazo),critical:true})),...reviews.map(doc=>({title:doc.titulo||doc.tipo||'Documento em revisão',meta:doc.empresas?.nome||'Empresa indisponível',time:'Revisão',critical:false}))];
-  document.getElementById('criticalAlertsList').innerHTML=alerts.length?alerts.slice(0,10).map(item=>operationalRow(item.title,item.meta,item.time,item.critical)).join(''):'<div class="empty-row">Nenhum alerta crítico no momento.</div>';
-  document.getElementById('leadsList').innerHTML=!isAdmin?'<div class="empty-row">Disponível para administradores.</div>':leads.length?leads.map(l=>`<div class="lead-row"><div class="info"><b>${escapeHtml(l.nome)}</b><span>${escapeHtml(l.empresa||'—')} · ${escapeHtml(l.telefone||l.email||'sem contato')}</span></div><div style="text-align:right;flex-shrink:0;"><span class="lead-badge ${l.status==='contatado'?'contatado':'novo'}">${(l.status||'novo').toUpperCase()}</span><div class="time2" style="margin-top:6px;">${timeAgo(l.criado_em)}</div></div></div>`).join(''):'<div class="empty-row">Nenhum lead recebido ainda.</div>';
-}
-
-
-initAuth();
-</script>
-<script src="ui-enhancements.js?v=4.4"></script>
+<script src="ui-enhancements.js?v=4.5"></script>
+<script src="origenix-dashboard.js?v=1.0"></script>
 </body>
 </html>
