@@ -691,6 +691,38 @@ async function enviarAnexoDocumento(documentId, file, button){
   }
 }
 
+async function excluirAnexoDocumento(documentId, attachmentId, encodedPath, encodedName, button){
+  if(!canCreateDocuments){ showToast('Seu perfil não possui permissão para excluir anexos.', true); return; }
+  const objectPath = decodeURIComponent(encodedPath || '');
+  const fileName = decodeURIComponent(encodedName || 'Anexo');
+  const confirmed = window.OrigenixUI?.openFormDialog
+    ? await window.OrigenixUI.openFormDialog({
+        title:'Excluir anexo?',
+        description:fileName + ' será removido permanentemente. A ação ficará registrada na auditoria.',
+        fields:[], confirmLabel:'Excluir anexo', danger:true
+      })
+    : (window.confirm('Excluir permanentemente ' + fileName + '?') ? {} : null);
+  if(!confirmed) return;
+  OrigenixUI?.setButtonLoading?.(button, true, 'Excluindo...');
+  try{
+    const isPrivateObject = objectPath && !urlSeguraAnexo(objectPath);
+    if(isPrivateObject){
+      if(!objectPath.startsWith(documentId + '/') || objectPath.includes('..')) throw new Error('Caminho de anexo inválido.');
+      const storageResult = await supa.storage.from('documentos').remove([objectPath]);
+      if(storageResult.error) throw storageResult.error;
+    }
+    const { error } = await supa.rpc('excluir_anexo_auditado', { anexo_id:attachmentId });
+    if(error) throw error;
+    showToast('Anexo excluído e ação registrada.');
+    await abrirDossieDocumento(documentId, false);
+  }catch(error){
+    console.error('Falha ao excluir anexo:', error);
+    showToast(error?.message || 'Não foi possível excluir o anexo.', true);
+  }finally{
+    OrigenixUI?.setButtonLoading?.(button, false);
+  }
+}
+
 async function abrirDossieDocumento(id, captureFocus=true){
   const documento = documentCache.find(item=>item.id===id);
   if(!documento){ showToast('Documento não encontrado. Atualize a biblioteca.', true); return; }
@@ -748,7 +780,7 @@ async function abrirDossieDocumento(id, captureFocus=true){
     <section class="client-detail-section">
       <div class="dossier-version-head"><h3>Anexos (${attachments.length})</h3>${canCreateDocuments ? `<div><input id="documentAttachmentInput" type="file" hidden accept=".pdf,.jpg,.jpeg,.png,.webp,.txt,.csv,.doc,.docx,.xls,.xlsx"><button id="documentAttachmentButton" class="mini-btn emit" type="button" onclick="document.getElementById('documentAttachmentInput').click()">＋ Enviar anexo</button></div>` : ''}</div>
       ${canCreateDocuments ? '<p class="helper-text">PDF, imagem, texto, Word ou Excel · máximo de 10 MB · acesso privado.</p>' : ''}
-      ${attachments.length ? attachments.map(attachment=>`<div class="dossier-attachment"><div>${attachment.signed_url ? `<a href="${escapeHtml(attachment.signed_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(attachment.nome_arquivo||'Abrir anexo')}</a>` : `<b>${escapeHtml(attachment.nome_arquivo||'Anexo indisponível')}</b>`}<span>${attachment.created_at ? new Date(attachment.created_at).toLocaleDateString('pt-BR') : 'Sem data'}</span></div></div>`).join('') : '<div class="empty-state" style="padding:24px 0">Nenhum anexo relacionado.</div>'}
+      ${attachments.length ? attachments.map(attachment=>`<div class="dossier-attachment"><div>${attachment.signed_url ? `<a href="${escapeHtml(attachment.signed_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(attachment.nome_arquivo||'Abrir anexo')}</a>` : `<b>${escapeHtml(attachment.nome_arquivo||'Anexo indisponível')}</b>`}<span>${attachment.created_at ? new Date(attachment.created_at).toLocaleDateString('pt-BR') : 'Sem data'}</span></div>${canCreateDocuments ? `<button class="mini-btn danger" type="button" onclick="excluirAnexoDocumento('${id}','${attachment.id}','${encodeURIComponent(attachment.url||'')}','${encodeURIComponent(attachment.nome_arquivo||'Anexo')}',this)">Excluir</button>` : ''}</div>`).join('') : '<div class="empty-state" style="padding:24px 0">Nenhum anexo relacionado.</div>'}
     </section>`;
   const input = document.getElementById('documentAttachmentInput');
   if(input) input.addEventListener('change', ()=>{
