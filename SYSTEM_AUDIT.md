@@ -193,3 +193,19 @@ modifica dados e mantém a integração atual com Supabase, GitHub e Netlify.
   o estado real do sistema.
 - O PR permanece como rascunho até haver evidência dos testes autenticados para
   Administrador, RT, Cliente e Consultor.
+
+## Navegação contextual para PACs
+
+- A ação `Abrir PACs` da visão 360° envia o identificador do estabelecimento na
+  URL.
+- A página de PACs valida esse identificador contra as empresas permitidas pela
+  RLS antes de selecioná-lo.
+- A troca manual de estabelecimento atualiza a URL sem recarregar a página,
+  permitindo favoritos, retorno do navegador e compartilhamento do contexto.
+- Parâmetros inválidos ou referentes a empresas sem acesso são ignorados.
+
+### Validações deste ciclo
+
+- JavaScript analisado sem erros de sintaxe.
+- Leitura do parâmetro, validação na lista autorizada e atualização de URL
+  confirmadas no arquivo publicado.
