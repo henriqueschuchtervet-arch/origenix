@@ -21,3 +21,5 @@
   X-Content-Type-Options: nosniff
 /origenix-supabase.js
   Cache-Control: public, max-age=3600, must-revalidate
+/origenix-auth.js
+  Cache-Control: public, max-age=3600, must-revalidate
