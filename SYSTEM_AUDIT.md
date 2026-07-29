@@ -313,6 +313,24 @@ modifica dados e mantém a integração atual com Supabase, GitHub e Netlify.
 - Prévia do Netlify respondeu normalmente na rota da biblioteca documental.
 - Advisor de segurança: nenhum alerta novo introduzido; permanece apenas a proteção contra senhas vazadas, dependente de configuração do plano.
 - Advisor de desempenho: somente índices ainda não utilizados, classificados como informativos.
+
+## Ciclo 14 — exclusão auditada e privilégio mínimo
+
+- Anexos podem ser excluídos pelo dossiê somente após confirmação explícita.
+- A interface informa o caráter permanente da ação, exibe carregamento no botão e restaura o estado em caso de erro.
+- Administrador, RT e Consultor podem incluir ou excluir anexos; Cliente permanece somente leitura.
+- A RPC `excluir_anexo_auditado` remove o registro e grava `ANEXO_EXCLUIDO` com usuário, empresa, documento, nome e caminho do objeto.
+- A RPC executa como `SECURITY INVOKER`, preservando as RLS e os privilégios do usuário como segunda barreira.
+- A trilha de auditoria tornou-se append-only: o papel autenticado possui exclusivamente `SELECT` e `INSERT`.
+- A exclusão valida que o caminho privado pertence ao documento e rejeita segmentos suspeitos antes de acessar o Storage.
+
+### Verificações
+
+- Banco confirmou apenas políticas `SELECT` e `INSERT` na auditoria.
+- Banco confirmou exclusivamente privilégios `SELECT` e `INSERT` para o papel autenticado.
+- RPC confirmada como `SECURITY INVOKER`.
+- Advisor de segurança voltou ao estado anterior, sem alerta introduzido por esta entrega.
+- GitHub Actions aprovou 22 contratos de segurança e operação.
 - O painel consolida código, UUID, SHA-256, status, empresa, tipo, versão atual e
   data de emissão.
 - A linha do tempo carrega todas as versões permitidas pela RLS, ordenadas da mais
