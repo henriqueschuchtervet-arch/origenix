@@ -108,6 +108,16 @@
   .client-results-meta{display:flex;justify-content:space-between;align-items:center;padding:12px 24px;color:var(--metal);font-family:'Montserrat';font-size:11.5px;border-bottom:1px solid rgba(255,255,255,.05);}
   .client-pagination{display:flex;align-items:center;justify-content:flex-end;gap:12px;padding:16px 24px;border-top:1px solid var(--line);color:var(--metal);font-family:'Montserrat';font-size:11.5px;}
   .client-pagination span{min-width:110px;text-align:center;}
+  .document-tools{display:grid;grid-template-columns:minmax(220px,1fr) 190px auto;gap:10px;padding:16px 24px;border-bottom:1px solid var(--line);}
+  .document-tools input,.document-tools select{width:100%;background:#09090a;color:var(--white);border:1px solid var(--line);border-radius:9px;padding:11px 13px;}
+  .document-results-meta{padding:12px 24px;color:var(--metal);font:500 11.5px 'Montserrat';border-bottom:1px solid rgba(255,255,255,.05);}
+  .document-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:center;padding:16px 24px;border-bottom:1px solid var(--line);}
+  .document-row:last-child{border-bottom:none;}.document-row-main{min-width:0;}
+  .document-row-main b{display:block;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .document-row-main span{display:block;color:var(--metal);font:500 11.5px 'Montserrat';margin-top:5px;}
+  .document-row-meta{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;}
+  .document-status{display:inline-flex;padding:4px 8px;border-radius:999px;background:rgba(63,174,106,.12);color:#71d596;font:700 10px 'Montserrat';text-transform:uppercase;letter-spacing:.04em;}
+  .document-status.em_revisao{background:rgba(209,154,26,.13);color:#e8b849;}.document-status.arquivado{background:rgba(169,169,169,.12);color:var(--metal);}
   .client-detail-overlay{position:fixed;inset:0;background:rgba(0,0,0,.66);backdrop-filter:blur(4px);z-index:140;display:none;justify-content:flex-end;}
   .client-detail-overlay.show{display:flex;}
   .client-detail{width:min(560px,100%);height:100%;overflow:auto;background:#101012;border-left:1px solid var(--line);box-shadow:-28px 0 70px rgba(0,0,0,.55);animation:clientDetailIn .22s ease-out;}
@@ -141,6 +151,9 @@
     .client-pagination{justify-content:center;flex-wrap:wrap;padding:14px;}
     .client-detail-stats{grid-template-columns:repeat(2,1fr);}
     .client-detail-grid{grid-template-columns:1fr;}
+    .document-tools{grid-template-columns:1fr;}
+    .document-row{grid-template-columns:1fr;align-items:flex-start;}
+    .document-row-meta{justify-content:flex-start;}
   }
 
   .toast{
@@ -253,6 +266,11 @@
         Clientes Cadastrados
         <span class="count" id="clientCount">0</span>
       </div>
+      <div class="nav-item" data-tab="documentos">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2h9l5 5v15H6zM14 2v6h6M9 13h8M9 17h8"/></svg>
+        Documentos
+        <span class="count" id="documentCount">0</span>
+      </div>
     </nav>
     <div class="side-user">
       <div class="side-user-email" id="userEmail">—</div>
@@ -323,6 +341,26 @@
           <nav id="clientPagination" class="client-pagination" aria-label="Paginação de estabelecimentos"></nav>
         </div>
       </div>
+
+      <div id="tab-documentos" style="display:none;">
+        <div class="card panel">
+          <div class="card-head"><h2>Biblioteca Documental</h2></div>
+          <div class="document-tools" role="search">
+            <input id="documentSearch" type="search" placeholder="Pesquisar por título, tipo ou código" aria-label="Pesquisar documentos" oninput="agendarBuscaDocumentos()">
+            <select id="documentStatusFilter" aria-label="Filtrar documentos por status" onchange="reiniciarListaDocumentos()">
+              <option value="todos">Todos os status</option>
+              <option value="gerado">Gerados</option>
+              <option value="em_revisao">Em revisão</option>
+              <option value="assinado">Assinados</option>
+              <option value="arquivado">Arquivados</option>
+            </select>
+            <button class="btn-ghost" type="button" onclick="location.href='origenix-emissao-v3.html'">Central de assinaturas</button>
+          </div>
+          <div class="document-results-meta"><span id="documentResultsSummary" aria-live="polite">Carregando documentos...</span></div>
+          <div id="documentList" aria-live="polite" aria-busy="false"></div>
+          <nav id="documentPagination" class="client-pagination" aria-label="Paginação de documentos"></nav>
+        </div>
+      </div>
     </div>
   </main>
 </div>
@@ -388,6 +426,12 @@ let clientTotal = 0;
 let clientSearchTimer = null;
 let clientRequestSequence = 0;
 const CLIENT_PAGE_SIZE = 20;
+let documentCache = [];
+let documentPage = 0;
+let documentTotal = 0;
+let documentSearchTimer = null;
+let documentRequestSequence = 0;
+const DOCUMENT_PAGE_SIZE = 20;
 
 function setAuthMode(mode){
   authMode = mode;
@@ -449,13 +493,11 @@ async function aplicarRotaInicial(){
     novoCadastro();
     return;
   }
-  switchTab('clientes');
   if(view === 'documents'){
-    window.setTimeout(()=>{
-      showToast('Selecione um estabelecimento e use “Gerar documento”.');
-      document.getElementById('clientSearch')?.focus();
-    }, 350);
+    switchTab('documentos');
+    return;
   }
+  switchTab('clientes');
 }
 
 async function onAuthenticated(user){
@@ -507,6 +549,125 @@ async function testConnection(){
   } else {
     setConnStatus('ok', 'Conectado ao banco de dados ORIGENIX');
   }
+}
+
+const DOCUMENT_FIELDS = 'id,empresa_id,titulo,tipo,status,codigo,versao,criado_em,created_at,empresas(nome)';
+
+async function getDocuments(){
+  const status = document.getElementById('documentStatusFilter')?.value || 'todos';
+  const rawSearch = (document.getElementById('documentSearch')?.value || '').trim();
+  const search = rawSearch.replace(/[%,()_]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80);
+  const from = documentPage * DOCUMENT_PAGE_SIZE;
+  const to = from + DOCUMENT_PAGE_SIZE - 1;
+  const requestSequence = ++documentRequestSequence;
+  let query = supa.from('documentos')
+    .select(DOCUMENT_FIELDS, { count:'exact' })
+    .order('criado_em', { ascending:false, nullsFirst:false })
+    .range(from, to);
+  if(status !== 'todos') query = query.eq('status', status);
+  if(search){
+    const pattern = `%${search}%`;
+    query = query.or(`titulo.ilike.${pattern},tipo.ilike.${pattern},codigo.ilike.${pattern}`);
+  }
+  const { data, error, count } = await query;
+  if(requestSequence !== documentRequestSequence) return null;
+  if(error){ console.error(error); showToast('Não foi possível carregar os documentos.', true); return []; }
+  documentCache = data || [];
+  documentTotal = count || 0;
+  return documentCache;
+}
+
+function agendarBuscaDocumentos(){
+  window.clearTimeout(documentSearchTimer);
+  documentSearchTimer = window.setTimeout(reiniciarListaDocumentos, 320);
+}
+
+function reiniciarListaDocumentos(){
+  documentPage = 0;
+  renderDocumentList();
+}
+
+function mudarPaginaDocumentos(nextPage){
+  const pageCount = Math.max(1, Math.ceil(documentTotal / DOCUMENT_PAGE_SIZE));
+  if(nextPage < 0 || nextPage >= pageCount || nextPage === documentPage) return;
+  documentPage = nextPage;
+  renderDocumentList();
+  document.getElementById('documentSearch')?.focus({ preventScroll:true });
+}
+
+function formatDocumentDate(documento){
+  const raw = documento.criado_em || documento.created_at;
+  if(!raw) return 'Data não informada';
+  const date = new Date(raw);
+  return Number.isNaN(date.getTime()) ? 'Data não informada' : date.toLocaleDateString('pt-BR');
+}
+
+async function copiarCodigoDocumento(encodedCode){
+  const code = decodeURIComponent(encodedCode || '');
+  if(!code){ showToast('Documento sem código disponível.', true); return; }
+  try{
+    await navigator.clipboard.writeText(code);
+    showToast('Código copiado.');
+  }catch{
+    showToast('Não foi possível copiar automaticamente.', true);
+  }
+}
+
+async function abrirEmpresaDoDocumento(empresaId){
+  let cliente = clientCache.find(item=>item.id===empresaId);
+  if(!cliente){
+    const { data, error } = await supa.from('empresas').select(EMPRESA_FIELDS).eq('id', empresaId).single();
+    if(error || !data){ showToast('Estabelecimento indisponível para seu perfil.', true); return; }
+    cliente = data;
+    clientCache.push(cliente);
+  }
+  abrirDetalhesCliente(cliente.id);
+}
+
+function renderDocumentRows(list){
+  const container = document.getElementById('documentList');
+  const summary = document.getElementById('documentResultsSummary');
+  const pagination = document.getElementById('documentPagination');
+  const first = documentTotal ? documentPage * DOCUMENT_PAGE_SIZE + 1 : 0;
+  const last = Math.min((documentPage + 1) * DOCUMENT_PAGE_SIZE, documentTotal);
+  const pageCount = Math.max(1, Math.ceil(documentTotal / DOCUMENT_PAGE_SIZE));
+  document.getElementById('documentCount').textContent = documentTotal;
+  summary.textContent = documentTotal
+    ? `Exibindo ${first}–${last} de ${documentTotal} documento${documentTotal===1?'':'s'}`
+    : 'Nenhum documento encontrado';
+  if(!list.length){
+    container.innerHTML = '<div class="empty-state">Nenhum documento corresponde aos filtros atuais.</div>';
+  }else{
+    container.innerHTML = list.map(doc=>{
+      const status = ['gerado','em_revisao','assinado','arquivado'].includes(doc.status) ? doc.status : 'gerado';
+      const companyName = doc.empresas?.nome || 'Estabelecimento';
+      return `<article class="document-row">
+        <div class="document-row-main">
+          <b>${escapeHtml(doc.titulo||doc.tipo||'Documento sem título')}</b>
+          <span>${escapeHtml(companyName)} · ${escapeHtml(doc.codigo||'Sem código')} · ${escapeHtml(doc.versao||'v1.0')} · ${formatDocumentDate(doc)}</span>
+        </div>
+        <div class="document-row-meta">
+          <small class="document-status ${status}">${escapeHtml(status.replace('_',' '))}</small>
+          <button class="mini-btn" type="button" onclick="copiarCodigoDocumento('${encodeURIComponent(doc.codigo||'')}')">Copiar código</button>
+          <button class="mini-btn edit" type="button" onclick="abrirEmpresaDoDocumento('${doc.empresa_id}')">Ver empresa</button>
+        </div>
+      </article>`;
+    }).join('');
+  }
+  pagination.innerHTML = pageCount > 1 ? `
+    <button class="mini-btn" type="button" onclick="mudarPaginaDocumentos(${documentPage-1})" ${documentPage===0?'disabled':''}>← Anterior</button>
+    <span>Página <b>${documentPage+1}</b> de ${pageCount}</span>
+    <button class="mini-btn" type="button" onclick="mudarPaginaDocumentos(${documentPage+1})" ${documentPage>=pageCount-1?'disabled':''}>Próxima →</button>` : '';
+}
+
+async function renderDocumentList(){
+  const container = document.getElementById('documentList');
+  container.setAttribute('aria-busy','true');
+  container.innerHTML = '<div class="empty-state">Carregando documentos...</div>';
+  const list = await getDocuments();
+  container.setAttribute('aria-busy','false');
+  if(list === null) return;
+  renderDocumentRows(list);
 }
 
 // ---- CRUD: empresas ----
@@ -634,15 +795,29 @@ function editarCliente(id){
 }
 
 function switchTab(tab){
+  const validTab = ['cadastro','clientes','documentos'].includes(tab) ? tab : 'clientes';
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
-  const nav = document.querySelector(`.nav-item[data-tab="${tab}"]`);
+  const nav = document.querySelector(`.nav-item[data-tab="${validTab}"]`);
   if(nav) nav.classList.add('active');
-  document.getElementById('tab-cadastro').style.display = tab==='cadastro' ? 'block':'none';
-  document.getElementById('tab-clientes').style.display = tab==='clientes' ? 'block':'none';
-  document.getElementById('pageTitle').textContent = tab==='cadastro' ? (editingClientId ? 'Editar Cadastro' : 'Novo Cadastro') : 'Clientes Cadastrados';
-  document.getElementById('pageSub').textContent = tab==='cadastro' ? (editingClientId ? 'Atualize os dados operacionais do estabelecimento' : 'Fase 1 — Triagem do estabelecimento') : 'Pesquise, edite, emita ou arquive estabelecimentos';
-  if(tab==='clientes') renderClientList();
+  document.getElementById('tab-cadastro').style.display = validTab==='cadastro' ? 'block':'none';
+  document.getElementById('tab-clientes').style.display = validTab==='clientes' ? 'block':'none';
+  document.getElementById('tab-documentos').style.display = validTab==='documentos' ? 'block':'none';
+  const titles = {
+    cadastro: editingClientId ? 'Editar Cadastro' : 'Novo Cadastro',
+    clientes: 'Clientes Cadastrados',
+    documentos: 'Biblioteca Documental'
+  };
+  const subtitles = {
+    cadastro: editingClientId ? 'Atualize os dados operacionais do estabelecimento' : 'Fase 1 — Triagem do estabelecimento',
+    clientes: 'Pesquise, edite, emita ou arquive estabelecimentos',
+    documentos: 'Consulte códigos, versões, status e estabelecimentos'
+  };
+  document.getElementById('pageTitle').textContent = titles[validTab];
+  document.getElementById('pageSub').textContent = subtitles[validTab];
+  if(validTab==='clientes') renderClientList();
+  if(validTab==='documentos') renderDocumentList();
 }
+
 document.querySelectorAll('.nav-item').forEach(el=>{
   el.addEventListener('click', ()=>switchTab(el.dataset.tab));
 });
