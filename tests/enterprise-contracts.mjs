@@ -512,10 +512,12 @@ contract("autenticação compartilha superfície visual sem sobrepor abas", () =
     "data-ox-v4",
     ".panel{background:var(--graphite)",
     ".login-card.panel",
+    "ui-enhancements.js?v=4.4",
   ]);
   includesAll(files["origenix-sistema-login.html"], [
     "data-ox-v4",
     "class=\"login-card panel\"",
+    "ui-enhancements.js?v=4.4",
   ]);
   includesAll(files["ui-enhancements.js"], [
     "const loginButton = $(\"#btnAuth\")",
