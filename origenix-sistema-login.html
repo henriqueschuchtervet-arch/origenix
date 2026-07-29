@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR" style="background:#000;">
+<html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,29 +10,29 @@
 <script src="origenix-supabase.js?v=1.0"></script>
 <script src="origenix-auth.js?v=1.0"></script>
 <link rel="stylesheet" href="origenix-v4.css?v=4.5" data-ox-v4>
-<link rel="stylesheet" href="origenix-system.css?v=1.0">
+<link rel="stylesheet" href="origenix-system.css?v=1.1">
 </head>
 <body>
 <div class="bg-layer"></div>
 
 <div id="loginView" class="login-wrap">
   <div class="login-card panel">
-    <div class="side-brand" style="padding:0 0 24px;justify-content:center;">
+    <div class="side-brand auth-brand">
       <img src="assets/origenix-brand-v1.svg" alt="ORIGENIX">
       <div class="name">ORIGENI<span class="x">X</span></div>
     </div>
     <div class="login-tabs">
-      <button class="login-tab active" data-mode="login" onclick="setAuthMode('login')">Entrar</button>
-      <button class="login-tab" data-mode="signup" onclick="setAuthMode('signup')">Criar Conta</button>
+      <button class="login-tab active" data-mode="login" data-action="auth-login">Entrar</button>
+      <button class="login-tab" data-mode="signup" data-action="auth-signup">Criar Conta</button>
     </div>
-    <div class="f-item" style="margin-top:20px;"><label>E-mail</label><input id="auth_email" type="email" placeholder="seu@email.com"></div>
-    <div class="f-item" style="margin-top:14px;"><label>Senha</label><input id="auth_password" type="password" placeholder="••••••••"></div>
-    <button class="btn-primary" id="btnAuth" style="width:100%;justify-content:center;margin-top:20px;" onclick="handleAuth()">Entrar</button>
+    <div class="f-item mt-20"><label>E-mail</label><input id="auth_email" type="email" placeholder="seu@email.com"></div>
+    <div class="f-item mt-14"><label>Senha</label><input id="auth_password" type="password" placeholder="••••••••"></div>
+    <button class="btn-primary auth-submit" id="btnAuth" data-action="auth-submit">Entrar</button>
     <div class="login-msg" id="loginMsg"></div>
   </div>
 </div>
 
-<div id="mainView" class="app" style="display:none;">
+<div id="mainView" class="app is-hidden">
   <aside class="sidebar panel">
     <div class="side-brand">
       <img src="assets/origenix-brand-v1.svg" alt="ORIGENIX">
@@ -71,14 +71,14 @@
     </nav>
     <div class="side-user">
       <div class="side-user-email" id="userEmail">—</div>
-      <button class="mini-btn" style="width:100%;margin-top:8px;" onclick="handleLogout()">Sair</button>
+      <button class="mini-btn logout-button" data-action="logout">Sair</button>
     </div>
   </aside>
 
   <main class="main">
     <div class="topbar panel">
       <div><h1 id="pageTitle">Novo Cadastro</h1><div class="sub" id="pageSub">Fase 1 — Triagem do estabelecimento</div></div>
-      <button id="notificationTrigger" class="notification-trigger" type="button" onclick="switchTab('notificacoes')" aria-label="Abrir notificações"><span aria-hidden="true">♢</span><b id="notificationTopCount">0</b></button>
+      <button id="notificationTrigger" class="notification-trigger" type="button" data-action="open-notifications" aria-label="Abrir notificações"><span aria-hidden="true">♢</span><b id="notificationTopCount">0</b></button>
     </div>
     <div class="conn-status" id="connStatus"><span class="dot"></span><span id="connMsg">Conectando ao banco de dados...</span></div>
 
@@ -112,24 +112,24 @@
             <div class="f-item"><label>CRMV do RT</label><input id="f_rt_crmv" placeholder="Ex: 14.203/MG"></div>
           </div>
           <div class="form-actions">
-            <button class="btn-primary" id="btnSalvar" onclick="salvarCliente()">Salvar Cadastro</button>
-            <button class="btn-ghost" id="btnCancelarEdicao" onclick="cancelarEdicao()" style="display:none;">Cancelar edição</button>
-            <button class="btn-ghost" id="btnLimpar" onclick="limparForm()">Limpar</button>
+            <button class="btn-primary" id="btnSalvar" data-action="save-client">Salvar Cadastro</button>
+            <button class="btn-ghost is-hidden" id="btnCancelarEdicao" data-action="cancel-edit">Cancelar edição</button>
+            <button class="btn-ghost" id="btnLimpar" data-action="clear-form">Limpar</button>
           </div>
         </div>
       </div>
 
-      <div id="tab-clientes" style="display:none;">
+      <div id="tab-clientes" class="is-hidden">
         <div class="card panel">
           <div class="card-head"><h2>Estabelecimentos Cadastrados</h2></div>
           <div class="client-tools" role="search">
-            <input id="clientSearch" type="search" placeholder="Pesquisar por nome, CNPJ, município ou RT" aria-label="Pesquisar estabelecimentos" oninput="agendarBuscaClientes()">
-            <select id="clientStatusFilter" aria-label="Filtrar por situação" onchange="reiniciarListaClientes()">
+            <input id="clientSearch" type="search" placeholder="Pesquisar por nome, CNPJ, município ou RT" aria-label="Pesquisar estabelecimentos" data-input-action="search-clients">
+            <select id="clientStatusFilter" aria-label="Filtrar por situação" data-change-action="filter-clients">
               <option value="ativos">Ativos</option>
               <option value="arquivados">Arquivados</option>
               <option value="todos">Todos</option>
             </select>
-            <button class="btn-ghost" type="button" onclick="novoCadastro()">+ Novo cadastro</button>
+            <button class="btn-ghost" type="button" data-action="new-client">+ Novo cadastro</button>
           </div>
           <div class="client-results-meta">
             <span id="clientResultsSummary" aria-live="polite">Carregando estabelecimentos...</span>
@@ -139,19 +139,19 @@
         </div>
       </div>
 
-      <div id="tab-documentos" style="display:none;">
+      <div id="tab-documentos" class="is-hidden">
         <div class="card panel">
           <div class="card-head"><h2>Biblioteca Documental</h2></div>
           <div class="document-tools" role="search">
-            <input id="documentSearch" type="search" placeholder="Pesquisar por título, tipo ou código" aria-label="Pesquisar documentos" oninput="agendarBuscaDocumentos()">
-            <select id="documentStatusFilter" aria-label="Filtrar documentos por status" onchange="reiniciarListaDocumentos()">
+            <input id="documentSearch" type="search" placeholder="Pesquisar por título, tipo ou código" aria-label="Pesquisar documentos" data-input-action="search-documents">
+            <select id="documentStatusFilter" aria-label="Filtrar documentos por status" data-change-action="filter-documents">
               <option value="todos">Todos os status</option>
               <option value="gerado">Gerados</option>
               <option value="em_revisao">Em revisão</option>
               <option value="assinado">Assinados</option>
               <option value="arquivado">Arquivados</option>
             </select>
-            <button class="btn-ghost" type="button" onclick="location.href='origenix-emissao-v3.html'">Central de assinaturas</button>
+            <button class="btn-ghost" type="button" data-action="open-emission">Central de assinaturas</button>
           </div>
           <div class="document-results-meta"><span id="documentResultsSummary" aria-live="polite">Carregando documentos...</span></div>
           <div id="documentList" aria-live="polite" aria-busy="false"></div>
@@ -159,7 +159,7 @@
         </div>
       </div>
 
-      <div id="tab-auditoria" style="display:none;">
+      <div id="tab-auditoria" class="is-hidden">
         <div class="card panel">
           <div class="card-head"><div><h2>Central de Auditoria</h2><p class="helper-text">Histórico imutável das ações realizadas no sistema.</p></div></div>
           <div class="audit-metrics" aria-label="Resumo da auditoria">
@@ -168,9 +168,9 @@
             <div class="audit-metric"><span>Integridade</span><b class="audit-integrity">Somente leitura</b></div>
           </div>
           <div class="audit-tools" role="search">
-            <input id="auditSearch" type="search" placeholder="Pesquisar ação ou detalhes" aria-label="Pesquisar auditoria" oninput="agendarBuscaAuditoria()">
-            <select id="auditCompanyFilter" aria-label="Filtrar auditoria por empresa" onchange="reiniciarAuditoria()"><option value="todos">Todas as empresas</option></select>
-            <select id="auditActionFilter" aria-label="Filtrar auditoria por ação" onchange="reiniciarAuditoria()">
+            <input id="auditSearch" type="search" placeholder="Pesquisar ação ou detalhes" aria-label="Pesquisar auditoria" data-input-action="search-audit">
+            <select id="auditCompanyFilter" aria-label="Filtrar auditoria por empresa" data-change-action="filter-audit"><option value="todos">Todas as empresas</option></select>
+            <select id="auditActionFilter" aria-label="Filtrar auditoria por ação" data-change-action="filter-audit">
               <option value="todos">Todas as ações</option>
               <option value="ANEXO_EXCLUIDO">Anexo excluído</option>
               <option value="AUDITORIA_EXPORTADA">Auditoria exportada</option>
@@ -185,10 +185,10 @@
               <option value="TAREFA_CONCLUIDA">Tarefa concluída</option>
               <option value="TAREFA_EXCLUIDA">Tarefa excluída</option>
             </select>
-            <label class="audit-date">De <input id="auditDateFrom" type="date" onchange="reiniciarAuditoria()"></label>
-            <label class="audit-date">Até <input id="auditDateTo" type="date" onchange="reiniciarAuditoria()"></label>
-            <button id="auditExportButton" class="btn-primary" type="button" onclick="exportarAuditoriaCSV(this)">Exportar CSV</button>
-            <button class="btn-ghost" type="button" onclick="limparFiltrosAuditoria()">Limpar filtros</button>
+            <label class="audit-date">De <input id="auditDateFrom" type="date" data-change-action="filter-audit"></label>
+            <label class="audit-date">Até <input id="auditDateTo" type="date" data-change-action="filter-audit"></label>
+            <button id="auditExportButton" class="btn-primary" type="button" data-action="export-audit">Exportar CSV</button>
+            <button class="btn-ghost" type="button" data-action="clear-audit-filters">Limpar filtros</button>
           </div>
           <div class="document-results-meta"><span id="auditResultsSummary" aria-live="polite">Carregando eventos...</span></div>
           <div id="auditList" aria-live="polite" aria-busy="false"></div>
@@ -196,27 +196,27 @@
         </div>
       </div>
 
-      <div id="tab-notificacoes" style="display:none;">
+      <div id="tab-notificacoes" class="is-hidden">
         <div class="card panel">
-          <div class="card-head"><div><h2>Central de Notificações</h2><p class="helper-text">Pendências calculadas a partir de tarefas e documentos acessíveis.</p></div><button class="btn-ghost" type="button" onclick="renderNotifications()">Atualizar</button></div>
+          <div class="card-head"><div><h2>Central de Notificações</h2><p class="helper-text">Pendências calculadas a partir de tarefas e documentos acessíveis.</p></div><button class="btn-ghost" type="button" data-action="refresh-notifications">Atualizar</button></div>
           <div class="notification-metrics">
             <div class="audit-metric"><span>Críticas</span><b id="notificationCriticalMetric">0</b></div>
             <div class="audit-metric"><span>Prazos próximos</span><b id="notificationDeadlineMetric">0</b></div>
             <div class="audit-metric"><span>Em revisão</span><b id="notificationReviewMetric">0</b></div>
           </div>
           <div class="notification-tools" role="search">
-            <input id="notificationSearch" type="search" placeholder="Pesquisar pendências" aria-label="Pesquisar notificações" oninput="agendarBuscaNotificacoes()">
-            <select id="notificationTypeFilter" aria-label="Filtrar notificações por tipo" onchange="renderNotificationRows()"><option value="todos">Todos os tipos</option><option value="tarefa">Tarefas</option><option value="documento">Documentos</option></select>
-            <select id="notificationReadFilter" aria-label="Filtrar notificações por leitura" onchange="renderNotificationRows()"><option value="nao_lidas">Não lidas</option><option value="todas">Todas</option><option value="lidas">Lidas</option></select>
+            <input id="notificationSearch" type="search" placeholder="Pesquisar pendências" aria-label="Pesquisar notificações" data-input-action="search-notifications">
+            <select id="notificationTypeFilter" aria-label="Filtrar notificações por tipo" data-change-action="filter-notifications"><option value="todos">Todos os tipos</option><option value="tarefa">Tarefas</option><option value="documento">Documentos</option></select>
+            <select id="notificationReadFilter" aria-label="Filtrar notificações por leitura" data-change-action="filter-notifications"><option value="nao_lidas">Não lidas</option><option value="todas">Todas</option><option value="lidas">Lidas</option></select>
           </div>
           <div class="document-results-meta"><span id="notificationResultsSummary" aria-live="polite">Carregando notificações...</span></div>
           <div id="notificationList" aria-live="polite" aria-busy="false"></div>
         </div>
       </div>
 
-      <div id="tab-tarefas" style="display:none;">
+      <div id="tab-tarefas" class="is-hidden">
         <div class="card panel">
-          <div class="card-head"><div><h2>Gestão de Tarefas & Agenda</h2><p class="helper-text">Planeje ações, responsáveis e prazos por estabelecimento.</p></div><button id="newTaskButton" class="btn-primary" type="button" onclick="abrirFormularioTarefa()">+ Nova tarefa</button></div>
+          <div class="card-head"><div><h2>Gestão de Tarefas & Agenda</h2><p class="helper-text">Planeje ações, responsáveis e prazos por estabelecimento.</p></div><button id="newTaskButton" class="btn-primary" type="button" data-action="new-task">+ Nova tarefa</button></div>
           <div class="task-metrics">
             <div class="audit-metric"><span>Em aberto</span><b id="taskOpenMetric">0</b></div>
             <div class="audit-metric"><span>Vencidas</span><b id="taskOverdueMetric">0</b></div>
@@ -224,13 +224,13 @@
             <div class="audit-metric"><span>Concluídas</span><b id="taskDoneMetric">0</b></div>
           </div>
           <div class="task-tools" role="search">
-            <input id="taskSearch" type="search" placeholder="Pesquisar título ou descrição" aria-label="Pesquisar tarefas" oninput="agendarBuscaTarefas()">
-            <select id="taskCompanyFilter" aria-label="Filtrar tarefas por empresa" onchange="reiniciarTarefas()"><option value="todos">Todas as empresas</option></select>
-            <select id="taskStatusFilter" aria-label="Filtrar tarefas por status" onchange="reiniciarTarefas()"><option value="abertas">Em aberto</option><option value="todos">Todos os status</option><option value="pendente">Pendentes</option><option value="em_andamento">Em andamento</option><option value="concluida">Concluídas</option><option value="cancelada">Canceladas</option></select>
-            <select id="taskPriorityFilter" aria-label="Filtrar tarefas por prioridade" onchange="reiniciarTarefas()"><option value="todos">Todas as prioridades</option><option value="critica">Crítica</option><option value="alta">Alta</option><option value="media">Média</option><option value="baixa">Baixa</option></select>
-            <div class="task-view-toggle" role="group" aria-label="Visualização"><button id="taskListViewButton" class="mini-btn active" type="button" onclick="alterarVisualizacaoTarefas('lista')">Lista</button><button id="taskAgendaViewButton" class="mini-btn" type="button" onclick="alterarVisualizacaoTarefas('agenda')">Agenda</button></div>
+            <input id="taskSearch" type="search" placeholder="Pesquisar título ou descrição" aria-label="Pesquisar tarefas" data-input-action="search-tasks">
+            <select id="taskCompanyFilter" aria-label="Filtrar tarefas por empresa" data-change-action="filter-tasks"><option value="todos">Todas as empresas</option></select>
+            <select id="taskStatusFilter" aria-label="Filtrar tarefas por status" data-change-action="filter-tasks"><option value="abertas">Em aberto</option><option value="todos">Todos os status</option><option value="pendente">Pendentes</option><option value="em_andamento">Em andamento</option><option value="concluida">Concluídas</option><option value="cancelada">Canceladas</option></select>
+            <select id="taskPriorityFilter" aria-label="Filtrar tarefas por prioridade" data-change-action="filter-tasks"><option value="todos">Todas as prioridades</option><option value="critica">Crítica</option><option value="alta">Alta</option><option value="media">Média</option><option value="baixa">Baixa</option></select>
+            <div class="task-view-toggle" role="group" aria-label="Visualização"><button id="taskListViewButton" class="mini-btn active" type="button" data-action="task-list-view">Lista</button><button id="taskAgendaViewButton" class="mini-btn" type="button" data-action="task-agenda-view">Agenda</button></div>
           </div>
-          <div id="taskAgendaNav" class="task-agenda-nav" style="display:none"><button class="mini-btn" type="button" onclick="mudarMesAgenda(-1)">←</button><b id="taskAgendaTitle">Mês</b><button class="mini-btn" type="button" onclick="mudarMesAgenda(1)">→</button></div>
+          <div id="taskAgendaNav" class="task-agenda-nav is-hidden"><button class="mini-btn" type="button" data-action="agenda-prev-month">←</button><b id="taskAgendaTitle">Mês</b><button class="mini-btn" type="button" data-action="agenda-next-month">→</button></div>
           <div class="document-results-meta"><span id="taskResultsSummary" aria-live="polite">Carregando tarefas...</span></div>
           <div id="taskList" aria-live="polite" aria-busy="false"></div>
           <nav id="taskPagination" class="client-pagination" aria-label="Paginação de tarefas"></nav>
@@ -242,27 +242,27 @@
 
 <div id="docView">
   <div class="doc-toolbar no-print">
-    <div class="back" onclick="fecharDocumento()">← Voltar ao sistema</div>
-    <button class="print-btn" onclick="window.print()">Imprimir / Salvar PDF</button>
+    <div class="back" data-action="close-document">← Voltar ao sistema</div>
+    <button class="print-btn" data-action="print-document">Imprimir / Salvar PDF</button>
   </div>
   <div id="docContent"></div>
 </div>
 
-<div class="client-detail-overlay" id="clientDetailOverlay" role="presentation" onclick="if(event.target===this) fecharDetalhesCliente()">
+<div class="client-detail-overlay" id="clientDetailOverlay" role="presentation" data-action="close-client-overlay">
   <aside class="client-detail" role="dialog" aria-modal="true" aria-labelledby="clientDetailTitle">
     <header class="client-detail-head">
       <div><div class="eyebrow">Visão 360°</div><h2 id="clientDetailTitle">Estabelecimento</h2></div>
-      <button class="client-detail-close" type="button" onclick="fecharDetalhesCliente()" aria-label="Fechar detalhes">×</button>
+      <button class="client-detail-close" type="button" data-action="close-client-details" aria-label="Fechar detalhes">×</button>
     </header>
     <div class="client-detail-body" id="clientDetailBody"></div>
   </aside>
 </div>
 
-<div class="client-detail-overlay" id="documentDossierOverlay" role="presentation" onclick="if(event.target===this) fecharDossieDocumento()">
+<div class="client-detail-overlay" id="documentDossierOverlay" role="presentation" data-action="close-dossier-overlay">
   <aside class="client-detail document-dossier" role="dialog" aria-modal="true" aria-labelledby="documentDossierTitle">
     <header class="client-detail-head">
       <div><div class="eyebrow">Dossiê documental</div><h2 id="documentDossierTitle">Documento</h2></div>
-      <button class="client-detail-close" type="button" onclick="fecharDossieDocumento()" aria-label="Fechar dossiê">×</button>
+      <button class="client-detail-close" type="button" data-action="close-dossier" aria-label="Fechar dossiê">×</button>
     </header>
     <div class="client-detail-body" id="documentDossierBody"></div>
   </aside>
@@ -270,7 +270,7 @@
 
 <div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 12l5 5L20 6"/></svg><span id="toastMsg"></span></div>
 
-<script src="origenix-system.js?v=1.0"></script>
+<script src="origenix-system.js?v=1.1"></script>
 <script src="ui-enhancements.js?v=4.5"></script>
 </body>
 </html>
