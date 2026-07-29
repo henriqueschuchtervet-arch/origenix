@@ -239,3 +239,54 @@ body { text-rendering: optimizeLegibility; }
     display: none !important;
   }
 }
+
+/* Shared interaction layer — kept external for strict CSP compatibility. */
+.ox-scroll-lock{overflow:hidden}
+.ox-utility{position:fixed;right:18px;bottom:18px;z-index:190;display:flex;gap:8px;align-items:center}
+.ox-utility button,.ox-utility a,.ox-auth-link,.ox-secondary-action{
+  border:1px solid rgba(255,60,60,.32);background:#151517;color:#fff;border-radius:9px;
+  min-height:40px;padding:0 14px;font:600 12px Montserrat,Inter,sans-serif;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;text-decoration:none;
+  box-shadow:0 10px 28px rgba(0,0,0,.28);transition:.18s ease
+}
+.ox-utility button:hover,.ox-utility a:hover,.ox-auth-link:hover,.ox-secondary-action:hover{
+  border-color:#ff1a1a;background:#241313;transform:translateY(-1px)
+}
+.ox-backtop{display:none!important}.ox-backtop.show{display:inline-flex!important}
+.ox-password-wrap{position:relative}.ox-password-wrap input{padding-right:48px!important}
+.ox-password-toggle{position:absolute;right:7px;top:50%;transform:translateY(-50%);border:0;
+  background:transparent;color:#aaa;padding:8px;cursor:pointer;font:600 11px Inter,sans-serif}
+.ox-auth-actions{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap}
+.ox-auth-link{background:transparent;box-shadow:none;min-height:34px}
+.ox-cancel{width:100%;margin-top:8px}
+.ox-toast{position:fixed;left:50%;bottom:26px;z-index:260;transform:translate(-50%,20px);
+  padding:12px 18px;border:1px solid rgba(255,60,60,.38);border-radius:9px;background:#171719;
+  color:#fff;font:600 12px Montserrat,Inter,sans-serif;box-shadow:0 18px 50px rgba(0,0,0,.5);
+  opacity:0;pointer-events:none;transition:.2s ease}.ox-toast.show{opacity:1;transform:translate(-50%,0)}
+.ox-refresh{border:1px solid rgba(255,60,60,.32);background:#151517;color:#fff;border-radius:9px;
+  min-height:40px;padding:0 14px;font:600 12px Montserrat,Inter,sans-serif;cursor:pointer}
+.ox-command-overlay{position:fixed;inset:0;z-index:280;background:rgba(0,0,0,.76);backdrop-filter:blur(8px);
+  display:none;align-items:flex-start;justify-content:center;padding:12vh 18px 24px}.ox-command-overlay.show{display:flex}
+.ox-command{width:min(620px,100%);background:#121214;border:1px solid rgba(255,60,60,.34);
+  border-radius:14px;box-shadow:0 34px 90px rgba(0,0,0,.72);overflow:hidden}
+.ox-command-head{display:flex;align-items:center;gap:12px;padding:15px;border-bottom:1px solid rgba(255,60,60,.2)}
+.ox-command-head input{flex:1;min-width:0;background:#090909;border:1px solid rgba(255,60,60,.25);
+  color:#fff;border-radius:9px;padding:13px 14px;font:500 14px Inter,sans-serif;outline:none}
+.ox-command-head input:focus{border-color:#ff1a1a}.ox-command-close{border:0;background:transparent;color:#aaa;
+  width:38px;height:38px;border-radius:8px;font-size:20px;cursor:pointer}.ox-command-close:hover{background:#242426;color:#fff}
+.ox-command-list{padding:9px;max-height:54vh;overflow:auto}.ox-command-item{display:flex;align-items:center;
+  justify-content:space-between;gap:16px;padding:13px 14px;border-radius:9px;color:#fff;text-decoration:none;
+  font:600 13px Montserrat,Inter,sans-serif}.ox-command-item:hover,.ox-command-item:focus{background:#241313;outline:none}
+.ox-command-item span{color:#8d8d93;font:500 11px Inter,sans-serif}.ox-command-empty{padding:26px;text-align:center;color:#929297;
+  font:500 13px Inter,sans-serif}.ox-command-hint{padding:10px 14px;border-top:1px solid rgba(255,60,60,.16);
+  color:#777;font:500 10px Montserrat,Inter,sans-serif;text-align:right}
+.ox-menu-toggle{display:none;border:1px solid rgba(255,60,60,.32);background:#151517;color:#fff;
+  border-radius:8px;width:42px;height:42px;font-size:20px;cursor:pointer}
+.ox-ripple{left:50%;top:50%}
+@media(max-width:880px){
+  .ox-menu-toggle{display:block}.nav-links.ox-open{display:flex;position:absolute;left:40px;right:40px;top:78px;
+    background:#121214;border:1px solid rgba(255,60,60,.28);border-radius:10px;padding:16px;
+    flex-direction:column;gap:8px;box-shadow:0 22px 50px rgba(0,0,0,.5)}
+  .nav-links.ox-open a{padding:11px;border-radius:7px}.nav-links.ox-open a:hover{background:#211}
+  .ox-utility{right:10px;bottom:10px}.ox-utility a,.ox-utility button{min-height:44px}
+}
