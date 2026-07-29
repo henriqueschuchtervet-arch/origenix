@@ -290,3 +290,26 @@ modifica dados e mantém a integração atual com Supabase, GitHub e Netlify.
   preservados.
 - O CI aprovou 17 de 17 contratos em quatro segundos.
 - O deploy da Netlify foi concluído com sucesso.
+
+## Dossiê e histórico documental
+
+- Cada documento da biblioteca ganhou a ação `Abrir dossiê`.
+- O painel consolida código, UUID, SHA-256, status, empresa, tipo, versão atual e
+  data de emissão.
+- A linha do tempo carrega todas as versões permitidas pela RLS, ordenadas da mais
+  recente para a mais antiga.
+- Cada versão apresenta número, código, status, data e hash de integridade.
+- Anexos relacionados são listados com nome e data.
+- URLs de anexos são analisadas pelo navegador e somente endereços HTTPS recebem
+  link clicável.
+- Código e hash podem ser copiados com feedback visual.
+- O painel possui fechamento por `Esc`, clique no fundo e restauração do foco.
+
+### Segurança e validações
+
+- As policies de leitura de `documento_versoes` e `anexos` foram verificadas antes
+  da implementação.
+- As consultas usam campos explícitos e filtro obrigatório por `documento_id`.
+- JavaScript inline analisado sem erros de sintaxe.
+- O CI aprovou 18 de 18 contratos em oito segundos.
+- O deploy da Netlify foi concluído com sucesso.
