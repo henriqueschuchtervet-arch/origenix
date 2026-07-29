@@ -393,9 +393,11 @@
               <option value="todos">Todas as ações</option>
               <option value="ANEXO_EXCLUIDO">Anexo excluído</option>
               <option value="DOCUMENTO_EMITIDO">Documento emitido</option>
+              <option value="DOCUMENTO_STATUS_ALTERADO">Status de documento alterado</option>
               <option value="EMPRESA_CRIADA">Empresa criada</option>
               <option value="EMPRESA_ATUALIZADA">Empresa atualizada</option>
               <option value="EMPRESA_ARQUIVADA">Empresa arquivada</option>
+              <option value="EMPRESA_RESTAURADA">Empresa restaurada</option>
             </select>
             <label class="audit-date">De <input id="auditDateFrom" type="date" onchange="reiniciarAuditoria()"></label>
             <label class="audit-date">Até <input id="auditDateTo" type="date" onchange="reiniciarAuditoria()"></label>
@@ -948,7 +950,8 @@ function nomeAcaoAuditoria(action){
   const labels = {
     ANEXO_EXCLUIDO:'Anexo excluído', DOCUMENTO_EMITIDO:'Documento emitido',
     EMPRESA_CRIADA:'Empresa criada', EMPRESA_ATUALIZADA:'Empresa atualizada',
-    EMPRESA_ARQUIVADA:'Empresa arquivada'
+    EMPRESA_ARQUIVADA:'Empresa arquivada', EMPRESA_RESTAURADA:'Empresa restaurada',
+    DOCUMENTO_STATUS_ALTERADO:'Status de documento alterado'
   };
   return labels[action] || String(action || 'Ação registrada').toLowerCase().replaceAll('_',' ');
 }
@@ -959,6 +962,9 @@ function resumoDetalhesAuditoria(raw){
     const value = JSON.parse(raw);
     const parts = [];
     if(value.nome_arquivo) parts.push(value.nome_arquivo);
+    if(value.nome) parts.push(value.nome);
+    if(Array.isArray(value.campos_alterados) && value.campos_alterados.length) parts.push('Campos: '+value.campos_alterados.join(', '));
+    if(value.status_anterior || value.status_atual) parts.push((value.status_anterior||'novo')+' → '+(value.status_atual||'sem status'));
     if(value.documento_id) parts.push('Documento ' + String(value.documento_id).slice(0,8));
     if(value.anexo_id) parts.push('Anexo ' + String(value.anexo_id).slice(0,8));
     if(value.codigo) parts.push(String(value.codigo));
