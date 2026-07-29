@@ -134,7 +134,7 @@ const migrationNames = (await readdir(migrationDir))
   .sort();
 
 contract("migrations são sequenciais e completas", () => {
-  assert.equal(migrationNames.length, 21, "esperadas exatamente 21 migrations");
+  assert.equal(migrationNames.length, 22, "esperadas exatamente 22 migrations");
   migrationNames.forEach((name, index) => {
     const expected = String(index + 1).padStart(3, "0");
     assert.ok(name.startsWith(`${expected}_`), `sequência inválida em ${name}`);
@@ -436,6 +436,49 @@ contract("notificações usam dados reais e leitura isolada por usuário", () =>
     "from('notificacao_leituras').upsert",
     "async function abrirDocumentoNotificacao",
     "view === 'notifications'",
+  ]);
+});
+
+contract("tarefas usam identidade real, papéis e auditoria interna", () => {
+  includesAll(migrations, [
+    "tarefas_responsavel_fkey",
+    "references auth.users(id)",
+    "add column if not exists criado_por",
+    "tarefas_status_check",
+    "private.tem_papel(array['administrador', 'rt', 'consultor'])",
+    "private.preparar_tarefa",
+    "private.auditar_tarefa_operacao",
+    "create trigger auditar_tarefa_operacao",
+    "'TAREFA_CRIADA'",
+    "'TAREFA_CONCLUIDA'",
+    "'TAREFA_EXCLUIDA'",
+  ]);
+});
+
+contract("gestão de tarefas possui CRUD, agenda e feedback", () => {
+  includesAll(files["origenix-sistema-login.html"], [
+    "id=\"tab-tarefas\"",
+    "data-tab=\"tarefas\"",
+    "TASK_PAGE_SIZE = 25",
+    "async function renderTasks",
+    "async function abrirFormularioTarefa",
+    "async function concluirTarefa",
+    "async function excluirTarefa",
+    "function alterarVisualizacaoTarefas",
+    "function mudarMesAgenda",
+    "carregarMetricasTarefas",
+    "from('tarefas').insert",
+    "from('tarefas').update",
+    "from('tarefas').delete",
+    "view === 'tasks'",
+  ]);
+});
+
+contract("diálogo compartilhado preserva valores em edição", () => {
+  includesAll(files["ui-enhancements.js"], [
+    "field.value ?? \"\"",
+    "\" selected\"",
+    "tag === \"textarea\" ? escapeHtmlText(field.value || \"\")",
   ]);
 });
 
