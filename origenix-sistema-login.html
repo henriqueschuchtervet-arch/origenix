@@ -239,6 +239,8 @@
   }
 
 .audit-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:16px 0}.audit-metric{display:flex;flex-direction:column;gap:4px;padding:14px 16px;border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,.55)}.audit-metric span{font-size:12px;color:var(--muted)}.audit-metric b{font-size:18px}.audit-integrity{color:#157347}.audit-tools{display:grid;grid-template-columns:minmax(220px,1.5fr) minmax(180px,1fr) minmax(180px,1fr) auto auto auto;gap:10px;align-items:end;margin:12px 0 16px}.audit-tools input,.audit-tools select{width:100%}.audit-date{display:grid;gap:5px;font-size:11px;font-weight:700;color:var(--muted)}.audit-event{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:12px;align-items:start;padding:16px 0;border-bottom:1px solid var(--border)}.audit-event:last-child{border-bottom:0}.audit-event-icon{display:grid;place-items:center;width:38px;height:38px;border-radius:11px;background:#eef6f1;color:#157347;font-weight:800}.audit-event-main{min-width:0}.audit-event-main b{display:block;margin-bottom:4px}.audit-event-main p{margin:0;color:var(--muted);font-size:13px;overflow-wrap:anywhere}.audit-event-meta{text-align:right;color:var(--muted);font-size:12px}.audit-event-meta span{display:block;margin-top:4px}.audit-action{display:inline-flex;padding:3px 8px;border-radius:999px;background:#f0f3f5;color:#334;font-size:11px;font-weight:700;text-transform:lowercase}@media(max-width:1100px){.audit-tools{grid-template-columns:1fr 1fr 1fr}.audit-metrics{grid-template-columns:1fr}}@media(max-width:680px){.audit-tools{grid-template-columns:1fr}.audit-event{grid-template-columns:38px 1fr}.audit-event-meta{grid-column:2;text-align:left}}
+
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px}.notification-trigger{position:relative;display:grid;place-items:center;width:42px;height:42px;border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,.7);color:var(--text);cursor:pointer;transition:.2s ease}.notification-trigger:hover{transform:translateY(-1px);border-color:#8ab69e}.notification-trigger:focus-visible{outline:3px solid rgba(21,115,71,.2);outline-offset:2px}.notification-trigger b{position:absolute;right:-5px;top:-5px;display:grid;place-items:center;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:#b42318;color:#fff;font-size:10px}.notification-trigger b:empty,.notification-trigger b[data-count="0"]{display:none}.notification-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:16px 0}.notification-tools{display:grid;grid-template-columns:minmax(220px,1fr) 180px 170px;gap:10px;margin:12px 0 16px}.notification-item{display:grid;grid-template-columns:12px minmax(0,1fr) auto;gap:12px;padding:16px 0;border-bottom:1px solid var(--border)}.notification-item:last-child{border-bottom:0}.notification-item.is-read{opacity:.62}.notification-severity{width:10px;height:10px;margin-top:6px;border-radius:999px;background:#6b7280}.notification-severity.critical{background:#b42318;box-shadow:0 0 0 4px rgba(180,35,24,.1)}.notification-severity.attention{background:#b7791f}.notification-severity.info{background:#2878a5}.notification-main b{display:block;margin-bottom:4px}.notification-main p{margin:0;color:var(--muted);font-size:13px}.notification-main small{display:block;margin-top:6px;color:var(--muted)}.notification-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}@media(max-width:760px){.notification-metrics,.notification-tools{grid-template-columns:1fr}.notification-item{grid-template-columns:10px 1fr}.notification-actions{grid-column:2;justify-content:flex-start}}
 </style>
 </head>
 <body>
@@ -287,6 +289,11 @@
         Auditoria
         <span class="count" id="auditCount">0</span>
       </div>
+      <div class="nav-item" data-tab="notificacoes" role="button" tabindex="0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8a6 6 0 10-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>
+        Notificações
+        <span class="count" id="notificationCount">0</span>
+      </div>
     </nav>
     <div class="side-user">
       <div class="side-user-email" id="userEmail">—</div>
@@ -296,8 +303,8 @@
 
   <main class="main">
     <div class="topbar panel">
-      <h1 id="pageTitle">Novo Cadastro</h1>
-      <div class="sub" id="pageSub">Fase 1 — Triagem do estabelecimento</div>
+      <div><h1 id="pageTitle">Novo Cadastro</h1><div class="sub" id="pageSub">Fase 1 — Triagem do estabelecimento</div></div>
+      <button id="notificationTrigger" class="notification-trigger" type="button" onclick="switchTab('notificacoes')" aria-label="Abrir notificações"><span aria-hidden="true">♢</span><b id="notificationTopCount">0</b></button>
     </div>
     <div class="conn-status" id="connStatus"><span class="dot"></span><span id="connMsg">Conectando ao banco de dados...</span></div>
 
@@ -410,6 +417,24 @@
           <nav id="auditPagination" class="client-pagination" aria-label="Paginação da auditoria"></nav>
         </div>
       </div>
+
+      <div id="tab-notificacoes" style="display:none;">
+        <div class="card panel">
+          <div class="card-head"><div><h2>Central de Notificações</h2><p class="helper-text">Pendências calculadas a partir de tarefas e documentos acessíveis.</p></div><button class="btn-ghost" type="button" onclick="renderNotifications()">Atualizar</button></div>
+          <div class="notification-metrics">
+            <div class="audit-metric"><span>Críticas</span><b id="notificationCriticalMetric">0</b></div>
+            <div class="audit-metric"><span>Prazos próximos</span><b id="notificationDeadlineMetric">0</b></div>
+            <div class="audit-metric"><span>Em revisão</span><b id="notificationReviewMetric">0</b></div>
+          </div>
+          <div class="notification-tools" role="search">
+            <input id="notificationSearch" type="search" placeholder="Pesquisar pendências" aria-label="Pesquisar notificações" oninput="agendarBuscaNotificacoes()">
+            <select id="notificationTypeFilter" aria-label="Filtrar notificações por tipo" onchange="renderNotificationRows()"><option value="todos">Todos os tipos</option><option value="tarefa">Tarefas</option><option value="documento">Documentos</option></select>
+            <select id="notificationReadFilter" aria-label="Filtrar notificações por leitura" onchange="renderNotificationRows()"><option value="nao_lidas">Não lidas</option><option value="todas">Todas</option><option value="lidas">Lidas</option></select>
+          </div>
+          <div class="document-results-meta"><span id="notificationResultsSummary" aria-live="polite">Carregando notificações...</span></div>
+          <div id="notificationList" aria-live="polite" aria-busy="false"></div>
+        </div>
+      </div>
     </div>
   </main>
 </div>
@@ -499,6 +524,9 @@ let auditSearchTimer = null;
 let auditRequestSequence = 0;
 let auditCompaniesLoaded = false;
 const AUDIT_PAGE_SIZE = 25;
+let notificationItems = [];
+let notificationSearchTimer = null;
+let notificationRequestSequence = 0;
 
 function setAuthMode(mode){
   authMode = mode;
@@ -568,6 +596,10 @@ async function aplicarRotaInicial(){
     switchTab('auditoria');
     return;
   }
+  if(view === 'notifications'){
+    switchTab('notificacoes');
+    return;
+  }
   switchTab('clientes');
 }
 
@@ -589,6 +621,7 @@ async function onAuthenticated(user){
   if(!sameUser){
     await testConnection();
     await aplicarRotaInicial();
+    atualizarBadgeNotificacoes();
   }
 }
 
@@ -908,6 +941,128 @@ async function renderDocumentList(){
   container.setAttribute('aria-busy','false');
   if(list === null) return;
   renderDocumentRows(list);
+}
+
+function agendarBuscaNotificacoes(){
+  window.clearTimeout(notificationSearchTimer);
+  notificationSearchTimer = window.setTimeout(renderNotificationRows,250);
+}
+
+function notificacaoConcluida(status){
+  return ['concluida','concluido','finalizada','finalizado','cancelada','cancelado'].includes(String(status||'').toLowerCase());
+}
+
+function classificarTarefa(tarefa){
+  const now = Date.now();
+  const deadline = tarefa.prazo ? new Date(tarefa.prazo).getTime() : null;
+  const days = deadline ? Math.ceil((deadline-now)/86400000) : null;
+  if(tarefa.prioridade==='critica' || (deadline && deadline<now)) return {severity:'critical',days};
+  if(tarefa.prioridade==='alta' || (days!==null && days<=3)) return {severity:'attention',days};
+  return {severity:'info',days};
+}
+
+function textoPrazo(days,prazo){
+  if(!prazo) return 'Sem prazo definido';
+  if(days < 0) return 'Vencida há '+Math.abs(days)+' dia'+(Math.abs(days)===1?'':'s');
+  if(days === 0) return 'Vence hoje';
+  if(days === 1) return 'Vence amanhã';
+  return 'Vence em '+days+' dias';
+}
+
+async function carregarNotificacoes(){
+  const sequence = ++notificationRequestSequence;
+  const [tasksResult,documentsResult] = await Promise.all([
+    supa.from('tarefas').select('id,empresa_id,titulo,descricao,status,responsavel,prioridade,prazo,created_at,empresas(nome)').order('prazo',{ascending:true,nullsFirst:false}).limit(200),
+    supa.from('documentos').select('id,empresa_id,titulo,tipo,status,codigo,versao,created_at,criado_em,empresas(nome)').in('status',['em_revisao','gerado']).order('created_at',{ascending:true}).limit(100)
+  ]);
+  if(sequence !== notificationRequestSequence) return null;
+  if(tasksResult.error || documentsResult.error){
+    console.error(tasksResult.error || documentsResult.error);
+    showToast('Não foi possível atualizar as notificações.',true);
+    return [];
+  }
+  const tasks = (tasksResult.data||[]).filter(task=>!notificacaoConcluida(task.status)).map(task=>{
+    const classification = classificarTarefa(task);
+    return {key:'tarefa:'+task.id,tipo:'tarefa',id:task.id,empresa_id:task.empresa_id,empresa:task.empresas?.nome||'Empresa indisponível',titulo:task.titulo||'Tarefa sem título',descricao:task.descricao||'Acompanhamento operacional',severity:classification.severity,due:task.prazo,meta:textoPrazo(classification.days,task.prazo),sortDate:task.prazo||task.created_at};
+  });
+  const sevenDaysAgo = Date.now()-7*86400000;
+  const documents = (documentsResult.data||[]).filter(doc=>doc.status==='em_revisao' || new Date(doc.criado_em||doc.created_at).getTime()<sevenDaysAgo).map(doc=>({key:'documento:'+doc.id,tipo:'documento',id:doc.id,empresa_id:doc.empresa_id,empresa:doc.empresas?.nome||'Empresa indisponível',titulo:doc.titulo||doc.tipo||'Documento',descricao:doc.status==='em_revisao'?'Documento aguardando revisão':'Documento gerado há mais de 7 dias sem formalização',severity:doc.status==='em_revisao'?'attention':'info',meta:(doc.codigo||'Sem código')+' · '+(doc.versao||'v1.0'),sortDate:doc.criado_em||doc.created_at}));
+  const items = [...tasks,...documents];
+  const references = items.map(item=>item.id);
+  let reads = [];
+  if(references.length){
+    const receipts = await supa.from('notificacao_leituras').select('tipo,referencia_id,lida_em').in('referencia_id',references);
+    if(receipts.error) console.error('Falha ao carregar leituras',receipts.error);
+    else reads = receipts.data||[];
+  }
+  const readKeys = new Set(reads.map(read=>read.tipo+':'+read.referencia_id));
+  const rank = {critical:0,attention:1,info:2};
+  notificationItems = items.map(item=>({...item,lida:readKeys.has(item.key)})).sort((a,b)=>Number(a.lida)-Number(b.lida) || rank[a.severity]-rank[b.severity] || new Date(a.sortDate||0)-new Date(b.sortDate||0));
+  atualizarContadoresNotificacoes();
+  return notificationItems;
+}
+
+function atualizarContadoresNotificacoes(){
+  const unread = notificationItems.filter(item=>!item.lida).length;
+  for(const id of ['notificationCount','notificationTopCount']){
+    const element = document.getElementById(id);
+    if(element){ element.textContent = unread; element.dataset.count = String(unread); }
+  }
+  document.getElementById('notificationCriticalMetric').textContent = notificationItems.filter(item=>item.severity==='critical'&&!item.lida).length;
+  document.getElementById('notificationDeadlineMetric').textContent = notificationItems.filter(item=>item.tipo==='tarefa'&&item.severity==='attention'&&!item.lida).length;
+  document.getElementById('notificationReviewMetric').textContent = notificationItems.filter(item=>item.tipo==='documento'&&item.severity==='attention'&&!item.lida).length;
+}
+
+async function atualizarBadgeNotificacoes(){ await carregarNotificacoes(); }
+
+function renderNotificationRows(){
+  const list = document.getElementById('notificationList');
+  const type = document.getElementById('notificationTypeFilter')?.value||'todos';
+  const read = document.getElementById('notificationReadFilter')?.value||'nao_lidas';
+  const search = (document.getElementById('notificationSearch')?.value||'').trim().toLocaleLowerCase('pt-BR').slice(0,80);
+  const filtered = notificationItems.filter(item=>(type==='todos'||item.tipo===type) && (read==='todas'||(read==='lidas'?item.lida:!item.lida)) && (!search||(item.titulo+' '+item.descricao+' '+item.empresa).toLocaleLowerCase('pt-BR').includes(search)));
+  document.getElementById('notificationResultsSummary').textContent = filtered.length+' notificação'+(filtered.length===1?'':'ões')+' exibida'+(filtered.length===1?'':'s');
+  if(!filtered.length){ list.innerHTML='<div class="empty-state">Nenhuma pendência corresponde aos filtros atuais.</div>'; return; }
+  list.innerHTML=filtered.map(item=>`<article class="notification-item ${item.lida?'is-read':''}">
+    <span class="notification-severity ${item.severity}" aria-label="Prioridade ${item.severity}"></span>
+    <div class="notification-main"><b>${escapeHtml(item.titulo)}</b><p>${escapeHtml(item.descricao)}</p><small>${escapeHtml(item.empresa)} · ${escapeHtml(item.meta)}</small></div>
+    <div class="notification-actions">
+      ${!item.lida?`<button class="mini-btn" type="button" onclick="marcarNotificacaoLida('${item.tipo}','${item.id}',this)">Marcar como lida</button>`:''}
+      <button class="mini-btn edit" type="button" onclick="${item.tipo==='documento'?`abrirDocumentoNotificacao('${item.id}')`:`abrirEmpresaDoDocumento('${item.empresa_id}')`}">${item.tipo==='documento'?'Abrir documento':'Ver empresa'}</button>
+    </div>
+  </article>`).join('');
+}
+
+async function renderNotifications(){
+  const list=document.getElementById('notificationList');
+  list.setAttribute('aria-busy','true');
+  list.innerHTML='<div class="empty-state">Atualizando prioridades...</div>';
+  const result=await carregarNotificacoes();
+  list.setAttribute('aria-busy','false');
+  if(result!==null) renderNotificationRows();
+}
+
+async function marcarNotificacaoLida(tipo,id,button){
+  OrigenixUI?.setButtonLoading?.(button,true,'Salvando...');
+  const {error}=await supa.from('notificacao_leituras').upsert({usuario_id:currentUser.id,tipo,referencia_id:id,lida_em:new Date().toISOString()},{onConflict:'usuario_id,tipo,referencia_id'});
+  OrigenixUI?.setButtonLoading?.(button,false);
+  if(error){ showToast('Não foi possível marcar como lida.',true); return; }
+  const item=notificationItems.find(entry=>entry.key===tipo+':'+id);
+  if(item) item.lida=true;
+  atualizarContadoresNotificacoes();
+  renderNotificationRows();
+}
+
+async function abrirDocumentoNotificacao(id){
+  let documento=documentCache.find(item=>item.id===id);
+  if(!documento){
+    const {data,error}=await supa.from('documentos').select(DOCUMENT_FIELDS).eq('id',id).single();
+    if(error||!data){ showToast('Documento não encontrado ou sem acesso.',true); return; }
+    documento=data;
+    documentCache.unshift(documento);
+  }
+  switchTab('documentos');
+  abrirDossieDocumento(id);
 }
 
 function agendarBuscaAuditoria(){
@@ -1239,7 +1394,7 @@ function editarCliente(id){
 }
 
 function switchTab(tab){
-  const validTab = ['cadastro','clientes','documentos','auditoria'].includes(tab) ? tab : 'clientes';
+  const validTab = ['cadastro','clientes','documentos','auditoria','notificacoes'].includes(tab) ? tab : 'clientes';
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
   const nav = document.querySelector(`.nav-item[data-tab="${validTab}"]`);
   if(nav) nav.classList.add('active');
@@ -1247,23 +1402,27 @@ function switchTab(tab){
   document.getElementById('tab-clientes').style.display = validTab==='clientes' ? 'block':'none';
   document.getElementById('tab-documentos').style.display = validTab==='documentos' ? 'block':'none';
   document.getElementById('tab-auditoria').style.display = validTab==='auditoria' ? 'block':'none';
+  document.getElementById('tab-notificacoes').style.display = validTab==='notificacoes' ? 'block':'none';
   const titles = {
     cadastro: editingClientId ? 'Editar Cadastro' : 'Novo Cadastro',
     clientes: 'Clientes Cadastrados',
     documentos: 'Biblioteca Documental',
-    auditoria: 'Central de Auditoria'
+    auditoria: 'Central de Auditoria',
+    notificacoes: 'Central de Notificações'
   };
   const subtitles = {
     cadastro: editingClientId ? 'Atualize os dados operacionais do estabelecimento' : 'Fase 1 — Triagem do estabelecimento',
     clientes: 'Pesquise, edite, emita ou arquive estabelecimentos',
     documentos: 'Consulte códigos, versões, status e estabelecimentos',
-    auditoria: 'Rastreabilidade imutável das operações do sistema'
+    auditoria: 'Rastreabilidade imutável das operações do sistema',
+    notificacoes: 'Prioridades, prazos e documentos que exigem atenção'
   };
   document.getElementById('pageTitle').textContent = titles[validTab];
   document.getElementById('pageSub').textContent = subtitles[validTab];
   if(validTab==='clientes') renderClientList();
   if(validTab==='documentos') renderDocumentList();
   if(validTab==='auditoria') renderAuditList();
+  if(validTab==='notificacoes') renderNotifications();
 }
 
 document.querySelectorAll('.nav-item').forEach(el=>{
