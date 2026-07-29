@@ -572,7 +572,6 @@ contract("configuração Supabase é centralizada e validada", () => {
     "origenix-emissao-v3.html",
     "origenix-sistema-login.html",
     "origenix-pacs.html",
-    "recuperar-senha.html",
   ].forEach((path) => {
     includesAll(files[path], [
       "origenix-supabase.js?v=1.0",
@@ -582,6 +581,8 @@ contract("configuração Supabase é centralizada e validada", () => {
     assert.ok(!files[path].includes("kdlyjcaxopypqeitazan.supabase.co"), `${path} ainda repete a URL`);
     assert.ok(!files[path].includes("window.supabase.createClient"), `${path} ignora o módulo compartilhado`);
   });
+  includesAll(files["recuperar-senha.html"], ["origenix-supabase.js?v=1.0"]);
+  includesAll(files["recuperar-senha.js"], ["window.OrigenixSupabase.createClient()"]);
 });
 
 contract("autenticação compartilhada preserva callbacks locais", () => {
