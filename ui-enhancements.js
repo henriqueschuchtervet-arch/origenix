@@ -331,7 +331,7 @@
       const required = field.required === false ? "" : "required";
       if (field.type === "select") {
         const choices = (field.options || []).map((choice) =>
-          `<option value="${escapeAttribute(choice.value)}">${escapeHtmlText(choice.label)}</option>`
+          `<option value="${escapeAttribute(choice.value)}"${String(choice.value) === String(field.value ?? "") ? " selected" : ""}>${escapeHtmlText(choice.label)}</option>`
         ).join("");
         return `<div class="ox-dialog-field"><label for="${id}">${escapeHtmlText(field.label)}</label>
           <select id="${id}" name="${escapeAttribute(field.name)}" ${required}>${choices}</select></div>`;
@@ -341,7 +341,7 @@
       const placeholder = field.placeholder ? ` placeholder="${escapeAttribute(field.placeholder)}"` : "";
       const value = tag === "input" && field.value ? ` value="${escapeAttribute(field.value)}"` : "";
       return `<div class="ox-dialog-field"><label for="${id}">${escapeHtmlText(field.label)}</label>
-        <${tag} id="${id}" name="${escapeAttribute(field.name)}"${type}${placeholder}${value} ${required}></${tag}></div>`;
+        <${tag} id="${id}" name="${escapeAttribute(field.name)}"${type}${placeholder}${value} ${required}>${tag === "textarea" ? escapeHtmlText(field.value || "") : ""}</${tag}></div>`;
     }).join("");
     overlay.innerHTML = `<section class="ox-dialog" role="dialog" aria-modal="true" aria-labelledby="oxDialogTitle">
       <header class="ox-dialog-header"><div><h2 class="ox-dialog-title" id="oxDialogTitle">${escapeHtmlText(title)}</h2>
