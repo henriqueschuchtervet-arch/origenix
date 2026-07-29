@@ -657,31 +657,64 @@ function urlSeguraAnexo(rawUrl){
   }
 }
 
-async function abrirDossieDocumento(id){
+async function resolverUrlAnexo(attachment){
+  const legacyUrl = urlSeguraAnexo(attachment.url);
+  if(legacyUrl) return {...attachment, signed_url:legacyUrl};
+  if(!attachment.url) return {...attachment, signed_url:null};
+  const { data, error } = await supa.storage.from('documentos').createSignedUrl(attachment.url, 300);
+  return {...attachment, signed_url:error ? null : data?.signedUrl};
+}
+
+async function enviarAnexoDocumento(documentId, file, button){
+  if(!file) return;
+  const allowedTypes = new Set(['application/pdf','image/jpeg','image/png','image/webp','text/plain','text/csv','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']);
+  if(file.size > 10485760){ showToast('O arquivo deve ter no máximo 10 MB.', true); return; }
+  if(!allowedTypes.has(file.type)){ showToast('Formato não permitido. Use PDF, imagem, texto, Word ou Excel.', true); return; }
+  const safeName = file.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]/g,'-').replace(/-+/g,'-').slice(-120) || 'anexo';
+  const objectPath = documentId + '/' + crypto.randomUUID() + '-' + safeName;
+  if(button) OrigenixUI?.setButtonLoading?.(button, true, 'Enviando...');
+  try{
+    const uploadResult = await supa.storage.from('documentos').upload(objectPath, file, { cacheControl:'3600', upsert:false });
+    if(uploadResult.error) throw uploadResult.error;
+    const attachmentResult = await supa.from('anexos').insert({documento_id:documentId,nome_arquivo:file.name,url:objectPath});
+    if(attachmentResult.error){
+      await supa.storage.from('documentos').remove([objectPath]);
+      throw attachmentResult.error;
+    }
+    showToast('Anexo enviado com segurança.');
+    await abrirDossieDocumento(documentId, false);
+  }catch(error){
+    console.error('Falha ao enviar anexo:', error);
+    showToast(error?.message || 'Não foi possível enviar o anexo.', true);
+  }finally{
+    if(button) OrigenixUI?.setButtonLoading?.(button, false);
+  }
+}
+
+async function abrirDossieDocumento(id, captureFocus=true){
   const documento = documentCache.find(item=>item.id===id);
   if(!documento){ showToast('Documento não encontrado. Atualize a biblioteca.', true); return; }
-  documentDossierReturnFocus = document.activeElement;
+  if(captureFocus) documentDossierReturnFocus = document.activeElement;
   const overlay = document.getElementById('documentDossierOverlay');
   const body = document.getElementById('documentDossierBody');
   document.getElementById('documentDossierTitle').textContent = documento.titulo || documento.tipo || 'Documento';
   body.innerHTML = '<div class="empty-state">Carregando histórico e anexos...</div>';
   overlay.classList.add('show');
   document.body.style.overflow = 'hidden';
-  overlay.querySelector('.client-detail-close').focus();
+  if(captureFocus) overlay.querySelector('.client-detail-close').focus();
 
   const [versionsResult, attachmentsResult] = await Promise.all([
-    supa.from('documento_versoes')
-      .select('id,numero_versao,codigo,status,hash_sha256,conteudo,criado_por,criado_em')
-      .eq('documento_id', id)
-      .order('numero_versao', { ascending:false }),
-    supa.from('anexos')
-      .select('id,nome_arquivo,url,created_at')
-      .eq('documento_id', id)
-      .order('created_at', { ascending:false })
+    supa.from('documento_versoes').select('id,numero_versao,codigo,status,hash_sha256,conteudo,criado_por,criado_em').eq('documento_id', id).order('numero_versao', { ascending:false }),
+    supa.from('anexos').select('id,nome_arquivo,url,created_at').eq('documento_id', id).order('created_at', { ascending:false })
   ]);
   if(!overlay.classList.contains('show')) return;
-  const versions = versionsResult.error ? [] : (versionsResult.data || []);
-  const attachments = attachmentsResult.error ? [] : (attachmentsResult.data || []);
+  if(versionsResult.error || attachmentsResult.error){
+    body.innerHTML = '<div class="empty-state">Não foi possível carregar o dossiê. Tente novamente.</div>';
+    showToast('Falha ao carregar o dossiê documental.', true);
+    return;
+  }
+  const versions = versionsResult.data || [];
+  const attachments = await Promise.all((attachmentsResult.data || []).map(resolverUrlAnexo));
   const hash = documento.hash_sha256 || versions[0]?.hash_sha256 || '';
   const companyName = documento.empresas?.nome || 'Estabelecimento';
   const dossierStatus = normalizarStatusDocumento(documento.status);
@@ -713,12 +746,16 @@ async function abrirDossieDocumento(id){
         </article>`).join('')}</div>` : '<div class="empty-state" style="padding:24px 0">Nenhuma versão registrada.</div>'}
     </section>
     <section class="client-detail-section">
-      <h3>Anexos (${attachments.length})</h3>
-      ${attachments.length ? attachments.map(attachment=>{
-        const safeUrl = urlSeguraAnexo(attachment.url);
-        return `<div class="dossier-attachment"><div>${safeUrl ? `<a href="${escapeHtml(safeUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(attachment.nome_arquivo||'Abrir anexo')}</a>` : `<b>${escapeHtml(attachment.nome_arquivo||'Anexo indisponível')}</b>`}<span>${attachment.created_at ? new Date(attachment.created_at).toLocaleDateString('pt-BR') : 'Sem data'}</span></div></div>`;
-      }).join('') : '<div class="empty-state" style="padding:24px 0">Nenhum anexo relacionado.</div>'}
+      <div class="dossier-version-head"><h3>Anexos (${attachments.length})</h3>${canCreateDocuments ? `<div><input id="documentAttachmentInput" type="file" hidden accept=".pdf,.jpg,.jpeg,.png,.webp,.txt,.csv,.doc,.docx,.xls,.xlsx"><button id="documentAttachmentButton" class="mini-btn emit" type="button" onclick="document.getElementById('documentAttachmentInput').click()">＋ Enviar anexo</button></div>` : ''}</div>
+      ${canCreateDocuments ? '<p class="helper-text">PDF, imagem, texto, Word ou Excel · máximo de 10 MB · acesso privado.</p>' : ''}
+      ${attachments.length ? attachments.map(attachment=>`<div class="dossier-attachment"><div>${attachment.signed_url ? `<a href="${escapeHtml(attachment.signed_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(attachment.nome_arquivo||'Abrir anexo')}</a>` : `<b>${escapeHtml(attachment.nome_arquivo||'Anexo indisponível')}</b>`}<span>${attachment.created_at ? new Date(attachment.created_at).toLocaleDateString('pt-BR') : 'Sem data'}</span></div></div>`).join('') : '<div class="empty-state" style="padding:24px 0">Nenhum anexo relacionado.</div>'}
     </section>`;
+  const input = document.getElementById('documentAttachmentInput');
+  if(input) input.addEventListener('change', ()=>{
+    const button = document.getElementById('documentAttachmentButton');
+    enviarAnexoDocumento(id, input.files?.[0], button);
+    input.value = '';
+  }, {once:true});
 }
 
 async function copiarHashDocumento(encodedHash){
