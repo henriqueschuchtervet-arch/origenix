@@ -118,6 +118,15 @@
   .document-row-meta{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;}
   .document-status{display:inline-flex;padding:4px 8px;border-radius:999px;background:rgba(63,174,106,.12);color:#71d596;font:700 10px 'Montserrat';text-transform:uppercase;letter-spacing:.04em;}
   .document-status.em_revisao{background:rgba(209,154,26,.13);color:#e8b849;}.document-status.arquivado{background:rgba(169,169,169,.12);color:var(--metal);}
+  .document-dossier{width:min(650px,100%);}
+  .dossier-identity{border:1px solid rgba(255,255,255,.08);background:#161619;border-radius:12px;padding:16px;margin-bottom:18px;}
+  .dossier-code{font:700 15px 'Orbitron';color:var(--red-accent);}.dossier-hash{display:block;color:var(--metal);font:500 10.5px 'Montserrat';overflow-wrap:anywhere;margin-top:8px;}
+  .dossier-timeline{position:relative;margin-left:8px;padding-left:22px;border-left:1px solid rgba(255,45,45,.28);}
+  .dossier-version{position:relative;padding:0 0 18px;}.dossier-version:last-child{padding-bottom:0;}
+  .dossier-version::before{content:'';position:absolute;left:-27px;top:4px;width:9px;height:9px;border-radius:50%;background:var(--red-accent);box-shadow:0 0 0 4px rgba(209,0,0,.14);}
+  .dossier-version-head{display:flex;justify-content:space-between;gap:12px;align-items:center;}.dossier-version-head b{font-size:12.5px;}.dossier-version p{margin:5px 0 0;color:var(--metal);font-size:11px;line-height:1.45;overflow-wrap:anywhere;}
+  .dossier-attachment{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.07);}.dossier-attachment:last-child{border-bottom:none;}
+  .dossier-attachment a{color:var(--white);font-size:12px;text-decoration:underline;text-underline-offset:3px;}.dossier-attachment span{color:var(--metal);font-size:10.5px;}
   .client-detail-overlay{position:fixed;inset:0;background:rgba(0,0,0,.66);backdrop-filter:blur(4px);z-index:140;display:none;justify-content:flex-end;}
   .client-detail-overlay.show{display:flex;}
   .client-detail{width:min(560px,100%);height:100%;overflow:auto;background:#101012;border-left:1px solid var(--line);box-shadow:-28px 0 70px rgba(0,0,0,.55);animation:clientDetailIn .22s ease-out;}
@@ -383,6 +392,16 @@
   </aside>
 </div>
 
+<div class="client-detail-overlay" id="documentDossierOverlay" role="presentation" onclick="if(event.target===this) fecharDossieDocumento()">
+  <aside class="client-detail document-dossier" role="dialog" aria-modal="true" aria-labelledby="documentDossierTitle">
+    <header class="client-detail-head">
+      <div><div class="eyebrow">Dossiê documental</div><h2 id="documentDossierTitle">Documento</h2></div>
+      <button class="client-detail-close" type="button" onclick="fecharDossieDocumento()" aria-label="Fechar dossiê">×</button>
+    </header>
+    <div class="client-detail-body" id="documentDossierBody"></div>
+  </aside>
+</div>
+
 <div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 12l5 5L20 6"/></svg><span id="toastMsg"></span></div>
 
 <script>
@@ -432,6 +451,7 @@ let documentTotal = 0;
 let documentSearchTimer = null;
 let documentRequestSequence = 0;
 const DOCUMENT_PAGE_SIZE = 20;
+let documentDossierReturnFocus = null;
 
 function setAuthMode(mode){
   authMode = mode;
@@ -551,7 +571,7 @@ async function testConnection(){
   }
 }
 
-const DOCUMENT_FIELDS = 'id,empresa_id,titulo,tipo,status,codigo,versao,criado_em,created_at,empresas(nome)';
+const DOCUMENT_FIELDS = 'id,empresa_id,titulo,tipo,status,codigo,versao,uuid_documento,hash_sha256,criado_em,created_at,atualizado_em,empresas(nome)';
 
 async function getDocuments(){
   const status = document.getElementById('documentStatusFilter')?.value || 'todos';
@@ -624,6 +644,104 @@ async function abrirEmpresaDoDocumento(empresaId){
   abrirDetalhesCliente(cliente.id);
 }
 
+function normalizarStatusDocumento(status){
+  return ['gerado','em_revisao','assinado','arquivado'].includes(status) ? status : 'gerado';
+}
+
+function urlSeguraAnexo(rawUrl){
+  try{
+    const parsed = new URL(rawUrl, location.origin);
+    return parsed.protocol === 'https:' ? parsed.href : null;
+  }catch{
+    return null;
+  }
+}
+
+async function abrirDossieDocumento(id){
+  const documento = documentCache.find(item=>item.id===id);
+  if(!documento){ showToast('Documento não encontrado. Atualize a biblioteca.', true); return; }
+  documentDossierReturnFocus = document.activeElement;
+  const overlay = document.getElementById('documentDossierOverlay');
+  const body = document.getElementById('documentDossierBody');
+  document.getElementById('documentDossierTitle').textContent = documento.titulo || documento.tipo || 'Documento';
+  body.innerHTML = '<div class="empty-state">Carregando histórico e anexos...</div>';
+  overlay.classList.add('show');
+  document.body.style.overflow = 'hidden';
+  overlay.querySelector('.client-detail-close').focus();
+
+  const [versionsResult, attachmentsResult] = await Promise.all([
+    supa.from('documento_versoes')
+      .select('id,numero_versao,codigo,status,hash_sha256,conteudo,criado_por,criado_em')
+      .eq('documento_id', id)
+      .order('numero_versao', { ascending:false }),
+    supa.from('anexos')
+      .select('id,nome_arquivo,url,created_at')
+      .eq('documento_id', id)
+      .order('created_at', { ascending:false })
+  ]);
+  if(!overlay.classList.contains('show')) return;
+  const versions = versionsResult.error ? [] : (versionsResult.data || []);
+  const attachments = attachmentsResult.error ? [] : (attachmentsResult.data || []);
+  const hash = documento.hash_sha256 || versions[0]?.hash_sha256 || '';
+  const companyName = documento.empresas?.nome || 'Estabelecimento';
+  const dossierStatus = normalizarStatusDocumento(documento.status);
+
+  body.innerHTML = `
+    <div class="dossier-identity">
+      <div class="dossier-version-head"><span class="dossier-code">${escapeHtml(documento.codigo||'Sem código')}</span><small class="document-status ${dossierStatus}">${escapeHtml(dossierStatus.replace('_',' '))}</small></div>
+      <span class="dossier-hash">UUID: ${escapeHtml(documento.uuid_documento||'Não informado')}</span>
+      <span class="dossier-hash">SHA-256: ${escapeHtml(hash||'Não informado')}</span>
+    </div>
+    <div class="client-detail-grid">
+      <div class="client-detail-field"><span>Estabelecimento</span><b>${escapeHtml(companyName)}</b></div>
+      <div class="client-detail-field"><span>Tipo</span><b>${escapeHtml(documento.tipo||'Não informado')}</b></div>
+      <div class="client-detail-field"><span>Versão atual</span><b>${escapeHtml(documento.versao||('v'+(versions[0]?.numero_versao||1)+'.0'))}</b></div>
+      <div class="client-detail-field"><span>Emissão</span><b>${formatDocumentDate(documento)}</b></div>
+    </div>
+    <div class="client-detail-actions">
+      <button class="mini-btn" type="button" onclick="copiarCodigoDocumento('${encodeURIComponent(documento.codigo||'')}')">Copiar código</button>
+      ${hash ? `<button class="mini-btn" type="button" onclick="copiarHashDocumento('${encodeURIComponent(hash)}')">Copiar hash</button>` : ''}
+      <button class="mini-btn edit" type="button" onclick="fecharDossieDocumento();abrirEmpresaDoDocumento('${documento.empresa_id}')">Ver empresa</button>
+    </div>
+    <section class="client-detail-section">
+      <h3>Histórico de versões (${versions.length})</h3>
+      ${versions.length ? `<div class="dossier-timeline">${versions.map(version=>`
+        <article class="dossier-version">
+          <div class="dossier-version-head"><b>Versão ${version.numero_versao}</b><small class="document-status ${normalizarStatusDocumento(version.status)}">${escapeHtml(normalizarStatusDocumento(version.status).replace('_',' '))}</small></div>
+          <p>${new Date(version.criado_em).toLocaleString('pt-BR')} · Código ${escapeHtml(version.codigo)}</p>
+          ${version.hash_sha256 ? `<p>SHA-256: ${escapeHtml(version.hash_sha256)}</p>` : ''}
+        </article>`).join('')}</div>` : '<div class="empty-state" style="padding:24px 0">Nenhuma versão registrada.</div>'}
+    </section>
+    <section class="client-detail-section">
+      <h3>Anexos (${attachments.length})</h3>
+      ${attachments.length ? attachments.map(attachment=>{
+        const safeUrl = urlSeguraAnexo(attachment.url);
+        return `<div class="dossier-attachment"><div>${safeUrl ? `<a href="${escapeHtml(safeUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(attachment.nome_arquivo||'Abrir anexo')}</a>` : `<b>${escapeHtml(attachment.nome_arquivo||'Anexo indisponível')}</b>`}<span>${attachment.created_at ? new Date(attachment.created_at).toLocaleDateString('pt-BR') : 'Sem data'}</span></div></div>`;
+      }).join('') : '<div class="empty-state" style="padding:24px 0">Nenhum anexo relacionado.</div>'}
+    </section>`;
+}
+
+async function copiarHashDocumento(encodedHash){
+  const hash = decodeURIComponent(encodedHash || '');
+  if(!hash) return;
+  try{ await navigator.clipboard.writeText(hash); showToast('Hash SHA-256 copiado.'); }
+  catch{ showToast('Não foi possível copiar automaticamente.', true); }
+}
+
+function fecharDossieDocumento(){
+  document.getElementById('documentDossierOverlay').classList.remove('show');
+  document.body.style.overflow = '';
+  if(documentDossierReturnFocus instanceof HTMLElement) documentDossierReturnFocus.focus();
+  documentDossierReturnFocus = null;
+}
+
+document.addEventListener('keydown', event=>{
+  if(event.key === 'Escape' && document.getElementById('documentDossierOverlay')?.classList.contains('show')){
+    event.preventDefault();
+    fecharDossieDocumento();
+  }
+});
+
 function renderDocumentRows(list){
   const container = document.getElementById('documentList');
   const summary = document.getElementById('documentResultsSummary');
@@ -648,6 +766,7 @@ function renderDocumentRows(list){
         </div>
         <div class="document-row-meta">
           <small class="document-status ${status}">${escapeHtml(status.replace('_',' '))}</small>
+          <button class="mini-btn emit" type="button" onclick="abrirDossieDocumento('${doc.id}')">Abrir dossiê</button>
           <button class="mini-btn" type="button" onclick="copiarCodigoDocumento('${encodeURIComponent(doc.codigo||'')}')">Copiar código</button>
           <button class="mini-btn edit" type="button" onclick="abrirEmpresaDoDocumento('${doc.empresa_id}')">Ver empresa</button>
         </div>
