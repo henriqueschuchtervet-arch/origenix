@@ -507,6 +507,23 @@ contract("dashboard executivo exibe prioridades e somente rotas funcionais", () 
   ]);
 });
 
+contract("autenticação compartilha superfície visual sem sobrepor abas", () => {
+  includesAll(files["origenix-dashboard-v3.html"], [
+    "data-ox-v4",
+    ".panel{background:var(--graphite)",
+    ".login-card.panel",
+  ]);
+  includesAll(files["origenix-sistema-login.html"], [
+    "data-ox-v4",
+    "class=\"login-card panel\"",
+  ]);
+  includesAll(files["ui-enhancements.js"], [
+    "const loginButton = $(\"#btnAuth\")",
+    "!button.classList.contains(\"login-tab\")",
+    "loginButton.insertAdjacentElement(\"afterend\", actions)",
+  ]);
+});
+
 const failures = results.filter((result) => !result.ok);
 for (const result of results) {
   console.log(`${result.ok ? "✓" : "✗"} ${result.name}${result.error ? ` — ${result.error}` : ""}`);
