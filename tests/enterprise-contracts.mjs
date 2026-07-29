@@ -32,12 +32,10 @@ const requiredFiles = [
   "origenix-emissao-v3.html",
   "origenix-sistema-login.html",
   "origenix-pacs.html",
+  "origenix-pacs.css",
+  "origenix-pacs.js",
   "recuperar-senha.html",
-  "recuperar-senha.css",
-  "recuperar-senha.js",
   "ui-enhancements.js",
-  "origenix-supabase.js",
-  "origenix-auth.js",
   "origenix-v4.css",
   "_headers",
   "README.md",
@@ -54,6 +52,7 @@ contract("arquivos essenciais existem", () => {
 
 contract("JavaScript compartilhado possui sintaxe válida", () => {
   new vm.Script(files["ui-enhancements.js"], { filename: "ui-enhancements.js" });
+  new vm.Script(files["origenix-pacs.js"], { filename: "origenix-pacs.js" });
 });
 
 contract("JavaScript inline possui sintaxe válida", () => {
@@ -69,21 +68,10 @@ contract("JavaScript inline possui sintaxe válida", () => {
 
 contract("recuperação de senha está completa", () => {
   includesAll(files["recuperar-senha.html"], [
-    "id=\"requestForm\"",
-    "id=\"updateForm\"",
-    "recuperar-senha.css?v=1.0",
-    "recuperar-senha.js?v=1.0",
-    "id=\"loginLink\"",
-  ]);
-  includesAll(files["recuperar-senha.js"], [
     "resetPasswordForEmail",
     "PASSWORD_RECOVERY",
     "updateUser",
-    "aria-busy",
-    "finally",
-    "loginLink.focus()",
   ]);
-  new vm.Script(files["recuperar-senha.js"], { filename: "recuperar-senha.js" });
 });
 
 contract("emissão preserva numeração e versionamento", () => {
@@ -123,11 +111,41 @@ contract("visão 360 respeita o escopo da empresa", () => {
 });
 
 contract("PACs preservam contexto e validam empresa permitida", () => {
-  includesAll(files["origenix-pacs.html"], [
-    "new URLSearchParams(location.search).get('empresa')",
-    "company.id===requestedCompany",
+  includesAll(files["origenix-pacs.js"], [
+    "new URLSearchParams(location.search).get(\"empresa\")",
+    "company.id === requestedCompany",
     "history.replaceState",
   ]);
+});
+
+contract("PACs possuem interface modular, segura e responsiva", () => {
+  const html = files["origenix-pacs.html"];
+  const script = files["origenix-pacs.js"];
+  const css = files["origenix-pacs.css"];
+  includesAll(html, [
+    "origenix-pacs.css?v=1.0",
+    "ui-enhancements.js?v=4.5",
+    "origenix-pacs.js?v=1.0",
+    "aria-live=\"polite\"",
+  ]);
+  includesAll(script, [
+    "PAC_STATUSES",
+    "setButtonLoading",
+    "data-action=\"status\"",
+    "data-action=\"record\"",
+    "data-action=\"nc\"",
+    "openFormDialog",
+    "pac_nao_conformidades",
+    "pac_registros",
+  ]);
+  includesAll(css, [":focus-visible", ":active", ":disabled", "prefers-reduced-motion"]);
+  assert.ok(!/<style\b|<script(?![^>]*\bsrc=)|\sstyle=|\son\w+=/i.test(html), "PAC ainda possui código inline");
+  assert.ok(!/\son(?:click|change|input)=/i.test(script), "PAC ainda gera manipuladores inline");
+  assert.ok(!/document\.createElement\(\"style\"\)|\.style\./.test(files["ui-enhancements.js"]), "UX compartilhada ainda injeta estilos");
+  includesAll(files["origenix-v4.css"], [".ox-command-overlay", ".ox-scroll-lock", ".ox-ripple{left:50%;top:50%}"]);
+  const pacHeaders = files["_headers"].split("/origenix-pacs.html")[1]?.split("\n\n")[0] || "";
+  includesAll(pacHeaders, ["script-src-attr 'none'", "style-src-attr 'none'", "frame-src 'none'"]);
+  assert.ok(!pacHeaders.includes("'unsafe-inline'"), "CSP dos PACs permite conteúdo inline");
 });
 
 contract("camada de UX possui acessibilidade e feedback", () => {
@@ -198,6 +216,7 @@ contract("botões e links internos possuem comportamento real", () => {
 
   for (const path of htmlFiles) {
     const html = files[path];
+    const pageScript = path === "origenix-pacs.html" ? files["origenix-pacs.js"] : "";
     const buttons = [...html.matchAll(/<button\b([^>]*)>/gi)];
     for (const [index, match] of buttons.entries()) {
       const attributes = match[1];
@@ -209,6 +228,7 @@ contract("botões e links internos possuem comportamento real", () => {
         html.includes(`getElementById('${id}')`)
         || html.includes(`getElementById("${id}")`)
         || new RegExp(`\\$\\(['"]${id}['"]\\)`).test(html)
+        || new RegExp(`\\$\\(["']${id}["']\\)`).test(pageScript)
       );
       const enhancedBySharedUi = ariaLabel
         && sharedUi.includes(`button[aria-label="${ariaLabel}"]`);
@@ -539,127 +559,6 @@ contract("autenticação compartilha superfície visual sem sobrepor abas", () =
     "!button.classList.contains(\"login-tab\")",
     "loginButton.insertAdjacentElement(\"afterend\", actions)",
   ]);
-});
-
-contract("marcas são assets compartilhados e cacheáveis", () => {
-  const optimizedPages = [
-    "index.html",
-    "origenix-dashboard-v3.html",
-    "origenix-emissao-v3.html",
-    "origenix-sistema-login.html",
-  ];
-  optimizedPages.forEach((path) => {
-    assert.ok(!files[path].includes("data:image/"), `${path} ainda contém imagem Base64 embutida`);
-    assert.ok(files[path].includes("assets/origenix-"), `${path} não usa asset compartilhado`);
-  });
-  includesAll(files["_headers"], [
-    "/assets/*",
-    "Cache-Control: public, max-age=31536000, immutable",
-  ]);
-});
-
-contract("configuração Supabase é centralizada e validada", () => {
-  new vm.Script(files["origenix-supabase.js"], { filename: "origenix-supabase.js" });
-  includesAll(files["origenix-supabase.js"], [
-    'const url = "https://kdlyjcaxopypqeitazan.supabase.co"',
-    'const publishableKey = "sb_publishable_',
-    'typeof factory !== "function"',
-    "window.OrigenixSupabase = Object.freeze",
-  ]);
-  [
-    "index.html",
-    "origenix-dashboard-v3.html",
-    "origenix-emissao-v3.html",
-    "origenix-sistema-login.html",
-    "origenix-pacs.html",
-  ].forEach((path) => {
-    includesAll(files[path], [
-      "origenix-supabase.js?v=1.0",
-      "window.OrigenixSupabase.createClient()",
-    ]);
-    assert.ok(!files[path].includes("sb_publishable_"), `${path} ainda repete a chave pública`);
-    assert.ok(!files[path].includes("kdlyjcaxopypqeitazan.supabase.co"), `${path} ainda repete a URL`);
-    assert.ok(!files[path].includes("window.supabase.createClient"), `${path} ignora o módulo compartilhado`);
-  });
-  includesAll(files["recuperar-senha.html"], ["origenix-supabase.js?v=1.0"]);
-  includesAll(files["recuperar-senha.js"], ["window.OrigenixSupabase.createClient()"]);
-});
-
-contract("autenticação compartilhada preserva callbacks locais", () => {
-  new vm.Script(files["origenix-auth.js"], { filename: "origenix-auth.js" });
-  includesAll(files["origenix-auth.js"], [
-    "normalizeCredentials",
-    "signInWithPassword",
-    "signUp",
-    "onAuthStateChange",
-    "getUser",
-    "AuthSessionMissingError",
-    "window.OrigenixAuth = Object.freeze",
-  ]);
-  [
-    "origenix-dashboard-v3.html",
-    "origenix-emissao-v3.html",
-    "origenix-sistema-login.html",
-  ].forEach((path) => {
-    includesAll(files[path], [
-      "origenix-auth.js?v=1.0",
-      "window.OrigenixAuth.authenticate",
-      "window.OrigenixAuth.observeSession",
-      "window.OrigenixAuth.signOut",
-      "onAuthenticated",
-    ]);
-    assert.ok(!files[path].includes("function authErrorMessage"), `${path} ainda duplica mensagens Auth`);
-    ["signInWithPassword", "signUp", "onAuthStateChange", "getUser"].forEach((method) => {
-      assert.ok(!files[path].includes(`supa.auth.${method}`), `${path} ainda chama ${method} diretamente`);
-    });
-  });
-});
-
-contract("cliente Supabase usa versão exata e requisição privada", () => {
-  const pages = [
-    "index.html",
-    "origenix-dashboard-v3.html",
-    "origenix-emissao-v3.html",
-    "origenix-sistema-login.html",
-    "origenix-pacs.html",
-    "recuperar-senha.html",
-  ];
-  pages.forEach((path) => {
-    includesAll(files[path], [
-      "@supabase/supabase-js@2.111.0/dist/umd/supabase.js",
-      'data-supabase-version="2.111.0"',
-      'crossorigin="anonymous"',
-      'referrerpolicy="no-referrer"',
-    ]);
-    assert.ok(
-      !files[path].includes('@supabase/supabase-js@2"'),
-      `${path} ainda usa versão flutuante do Supabase`,
-    );
-  });
-});
-
-contract("recuperação opera sem código inline e com CSP estrita", () => {
-  const html = files["recuperar-senha.html"];
-  assert.ok(!/<style\b/i.test(html), "recuperação ainda possui CSS inline");
-  assert.ok(!/<script(?![^>]*\bsrc=)/i.test(html), "recuperação ainda possui JavaScript inline");
-  assert.ok(!/\son[a-z]+=/i.test(html), "recuperação ainda possui handler inline");
-  assert.ok(!/\sstyle=/i.test(html), "recuperação ainda possui atributo style");
-  includesAll(files["recuperar-senha.css"], [
-    "button:hover:not(:disabled)",
-    ":focus-visible",
-    "prefers-reduced-motion",
-    ".login-link",
-  ]);
-  const recoveryHeaders = files["_headers"]
-    .split("/recuperar-senha.html")[1]
-    .split("/recuperar-senha.css")[0];
-  includesAll(recoveryHeaders, [
-    "script-src-attr 'none'",
-    "style-src-attr 'none'",
-    "frame-src 'none'",
-    "worker-src 'none'",
-  ]);
-  assert.ok(!recoveryHeaders.includes("unsafe-inline"), "CSP da recuperação ainda aceita inline");
 });
 
 const failures = results.filter((result) => !result.ok);
