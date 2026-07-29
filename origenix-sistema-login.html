@@ -392,6 +392,7 @@
             <select id="auditActionFilter" aria-label="Filtrar auditoria por ação" onchange="reiniciarAuditoria()">
               <option value="todos">Todas as ações</option>
               <option value="ANEXO_EXCLUIDO">Anexo excluído</option>
+              <option value="AUDITORIA_EXPORTADA">Auditoria exportada</option>
               <option value="DOCUMENTO_EMITIDO">Documento emitido</option>
               <option value="DOCUMENTO_STATUS_ALTERADO">Status de documento alterado</option>
               <option value="EMPRESA_CRIADA">Empresa criada</option>
@@ -401,6 +402,7 @@
             </select>
             <label class="audit-date">De <input id="auditDateFrom" type="date" onchange="reiniciarAuditoria()"></label>
             <label class="audit-date">Até <input id="auditDateTo" type="date" onchange="reiniciarAuditoria()"></label>
+            <button id="auditExportButton" class="btn-primary" type="button" onclick="exportarAuditoriaCSV(this)">Exportar CSV</button>
             <button class="btn-ghost" type="button" onclick="limparFiltrosAuditoria()">Limpar filtros</button>
           </div>
           <div class="document-results-meta"><span id="auditResultsSummary" aria-live="polite">Carregando eventos...</span></div>
@@ -948,7 +950,7 @@ async function carregarEmpresasAuditoria(){
 
 function nomeAcaoAuditoria(action){
   const labels = {
-    ANEXO_EXCLUIDO:'Anexo excluído', DOCUMENTO_EMITIDO:'Documento emitido',
+    ANEXO_EXCLUIDO:'Anexo excluído', AUDITORIA_EXPORTADA:'Auditoria exportada', DOCUMENTO_EMITIDO:'Documento emitido',
     EMPRESA_CRIADA:'Empresa criada', EMPRESA_ATUALIZADA:'Empresa atualizada',
     EMPRESA_ARQUIVADA:'Empresa arquivada', EMPRESA_RESTAURADA:'Empresa restaurada',
     DOCUMENTO_STATUS_ALTERADO:'Status de documento alterado'
@@ -981,14 +983,86 @@ function periodoAuditoria(){
   return 'Todos';
 }
 
+function valorSeguroCSV(value){
+  let text = String(value ?? '').replace(/\r?\n/g,' ').trim();
+  if(/^[=+\-@\t\r]/.test(text)) text = "'" + text;
+  return '"' + text.replaceAll('"','""') + '"';
+}
+
+function filtrosAuditoriaAtuais(){
+  const rawSearch = (document.getElementById('auditSearch')?.value || '').trim();
+  return {
+    busca:rawSearch.replace(/[%,()_]/g,' ').replace(/\s+/g,' ').trim().slice(0,80),
+    empresa:document.getElementById('auditCompanyFilter')?.value || 'todos',
+    acao:document.getElementById('auditActionFilter')?.value || 'todos',
+    data_inicial:document.getElementById('auditDateFrom')?.value || null,
+    data_final:document.getElementById('auditDateTo')?.value || null
+  };
+}
+
+function aplicarFiltrosAuditoria(query, filters){
+  if(filters.busca) query = query.or(`acao.ilike.%${filters.busca}%,detalhes.ilike.%${filters.busca}%`);
+  if(filters.empresa !== 'todos') query = query.eq('empresa_id', filters.empresa);
+  if(filters.acao !== 'todos') query = query.eq('acao', filters.acao);
+  if(filters.data_inicial) query = query.gte('created_at', filters.data_inicial+'T00:00:00');
+  if(filters.data_final){
+    const next = new Date(filters.data_final+'T12:00:00');
+    next.setDate(next.getDate()+1);
+    query = query.lt('created_at', next.toISOString().slice(0,10)+'T00:00:00');
+  }
+  return query;
+}
+
+async function exportarAuditoriaCSV(button){
+  const filters = filtrosAuditoriaAtuais();
+  OrigenixUI?.setButtonLoading?.(button,true,'Gerando...');
+  try{
+    let query = supa.from('auditorias')
+      .select('id,empresa_id,usuario_id,acao,detalhes,created_at,empresas(nome)')
+      .order('created_at',{ascending:false})
+      .order('id',{ascending:false})
+      .limit(2000);
+    query = aplicarFiltrosAuditoria(query,filters);
+    const {data,error} = await query;
+    if(error) throw error;
+    const events = data || [];
+    const trace = await supa.from('auditoria_exportacoes').insert({
+      usuario_id:currentUser.id,
+      empresa_id:filters.empresa === 'todos' ? null : filters.empresa,
+      filtros:filters,
+      total_registros:events.length
+    });
+    if(trace.error) throw new Error('Não foi possível registrar a exportação. Download cancelado.');
+    const header = ['Data','Ação','Empresa','Ator','Detalhes'];
+    const rows = events.map(event=>[
+      event.created_at ? new Date(event.created_at).toLocaleString('pt-BR') : '',
+      nomeAcaoAuditoria(event.acao),
+      event.empresas?.nome || 'Escopo global',
+      event.usuario_id === currentUser.id ? currentProfileName : (event.usuario_id || 'Sistema'),
+      event.detalhes || ''
+    ]);
+    const csv = '\uFEFF' + [header,...rows].map(row=>row.map(valorSeguroCSV).join(';')).join('\r\n');
+    const url = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'origenix-auditoria-' + new Date().toISOString().slice(0,10) + '.csv';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    showToast(events.length === 2000 && auditTotal > 2000 ? 'CSV gerado com o limite de 2.000 eventos.' : 'CSV gerado e exportação registrada.');
+    await renderAuditList();
+  }catch(error){
+    console.error('Falha ao exportar auditoria:',error);
+    showToast(error?.message || 'Não foi possível exportar a auditoria.',true);
+  }finally{
+    OrigenixUI?.setButtonLoading?.(button,false);
+  }
+}
+
 async function getAuditEvents(){
   const sequence = ++auditRequestSequence;
-  const rawSearch = (document.getElementById('auditSearch')?.value || '').trim();
-  const search = rawSearch.replace(/[%,()_]/g,' ').replace(/\s+/g,' ').trim().slice(0,80);
-  const company = document.getElementById('auditCompanyFilter')?.value || 'todos';
-  const action = document.getElementById('auditActionFilter')?.value || 'todos';
-  const fromDate = document.getElementById('auditDateFrom')?.value;
-  const toDate = document.getElementById('auditDateTo')?.value;
+  const filters = filtrosAuditoriaAtuais();
   const from = auditPage * AUDIT_PAGE_SIZE;
   const to = from + AUDIT_PAGE_SIZE - 1;
   let query = supa.from('auditorias')
@@ -996,11 +1070,7 @@ async function getAuditEvents(){
     .order('created_at',{ascending:false})
     .order('id',{ascending:false})
     .range(from,to);
-  if(search) query = query.or(`acao.ilike.%${search}%,detalhes.ilike.%${search}%`);
-  if(company !== 'todos') query = query.eq('empresa_id', company);
-  if(action !== 'todos') query = query.eq('acao', action);
-  if(fromDate) query = query.gte('created_at', fromDate+'T00:00:00');
-  if(toDate){ const next = new Date(toDate+'T12:00:00'); next.setDate(next.getDate()+1); query = query.lt('created_at', next.toISOString().slice(0,10)+'T00:00:00'); }
+  query = aplicarFiltrosAuditoria(query,filters);
   const {data,error,count} = await query;
   if(sequence !== auditRequestSequence) return null;
   if(error){ console.error(error); showToast('Não foi possível carregar a auditoria.', true); return []; }
