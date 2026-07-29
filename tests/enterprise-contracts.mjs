@@ -547,9 +547,9 @@ contract("marcas são assets compartilhados e cacheáveis", () => {
 contract("configuração Supabase é centralizada e validada", () => {
   new vm.Script(files["origenix-supabase.js"], { filename: "origenix-supabase.js" });
   includesAll(files["origenix-supabase.js"], [
-    "const url = "https://kdlyjcaxopypqeitazan.supabase.co"",
-    "const publishableKey = "sb_publishable_",
-    "typeof factory !== "function"",
+    'const url = "https://kdlyjcaxopypqeitazan.supabase.co"',
+    'const publishableKey = "sb_publishable_',
+    'typeof factory !== "function"',
     "window.OrigenixSupabase = Object.freeze",
   ]);
   [
