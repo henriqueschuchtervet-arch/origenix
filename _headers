@@ -39,3 +39,6 @@
 
 /origenix-system.css
   Cache-Control: public, max-age=3600, must-revalidate
+
+/origenix-sistema-login.html
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://unpkg.com; script-src-attr 'none'; style-src 'self' https://fonts.googleapis.com; style-src-attr 'none'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://kdlyjcaxopypqeitazan.supabase.co wss://kdlyjcaxopypqeitazan.supabase.co; frame-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; worker-src 'none'; manifest-src 'self'; upgrade-insecure-requests
