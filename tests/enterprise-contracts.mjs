@@ -134,7 +134,7 @@ const migrationNames = (await readdir(migrationDir))
   .sort();
 
 contract("migrations são sequenciais e completas", () => {
-  assert.equal(migrationNames.length, 16, "esperadas exatamente 16 migrations");
+  assert.equal(migrationNames.length, 18, "esperadas exatamente 18 migrations");
   migrationNames.forEach((name, index) => {
     const expected = String(index + 1).padStart(3, "0");
     assert.ok(name.startsWith(`${expected}_`), `sequência inválida em ${name}`);
@@ -325,6 +325,39 @@ contract("trilha de auditoria é imutável para usuários da aplicação", () =>
     "revoke update, delete on table public.auditorias from authenticated",
     "revoke all on table public.auditorias from authenticated",
     "grant select, insert on table public.auditorias to authenticated",
+    "private.auditar_exclusao_anexo",
+    "create trigger auditar_exclusao_anexo",
+    "drop policy if exists auditorias_insert",
+    "revoke insert on table public.auditorias from authenticated",
+    "grant select on table public.auditorias to authenticated",
+  ]);
+});
+
+contract("auditoria usa identidade real e índices de consulta", () => {
+  includesAll(migrations, [
+    "references auth.users(id)",
+    "on delete set null",
+    "idx_auditorias_created_at",
+    "idx_auditorias_empresa_created_at",
+    "idx_auditorias_acao_created_at",
+  ]);
+});
+
+contract("central de auditoria é filtrável, paginada e somente leitura", () => {
+  includesAll(files["origenix-sistema-login.html"], [
+    "id=\"tab-auditoria\"",
+    "data-tab=\"auditoria\"",
+    "AUDIT_PAGE_SIZE = 25",
+    "async function renderAuditList",
+    "async function getAuditEvents",
+    "empresas(nome)",
+    "auditCompanyFilter",
+    "auditActionFilter",
+    "auditDateFrom",
+    "auditDateTo",
+    "mudarPaginaAuditoria",
+    "view === 'audit'",
+    "Rastreabilidade imutável",
   ]);
 });
 
