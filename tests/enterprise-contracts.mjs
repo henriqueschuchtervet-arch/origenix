@@ -134,7 +134,7 @@ const migrationNames = (await readdir(migrationDir))
   .sort();
 
 contract("migrations são sequenciais e completas", () => {
-  assert.equal(migrationNames.length, 12, "esperadas exatamente 12 migrations");
+  assert.equal(migrationNames.length, 13, "esperadas exatamente 13 migrations");
   migrationNames.forEach((name, index) => {
     const expected = String(index + 1).padStart(3, "0");
     assert.ok(name.startsWith(`${expected}_`), `sequência inválida em ${name}`);
@@ -266,6 +266,34 @@ contract("dossiê documental exibe versões e anexos com segurança", () => {
     "parsed.protocol === 'https:'",
     "copiarHashDocumento",
     "documentDossierReturnFocus.focus()",
+  ]);
+});
+
+contract("storage documental permanece privado e limitado por RLS", () => {
+  includesAll(migrations, [
+    "'documentos'",
+    "false",
+    "10485760",
+    "documentos_storage_select",
+    "documentos_storage_insert",
+    "documentos_storage_delete",
+    "storage.foldername(name)",
+    "private.pode_acessar_documento",
+    "private.tem_papel",
+  ]);
+});
+
+contract("upload documental valida, assina e desfaz falhas parciais", () => {
+  includesAll(files["origenix-sistema-login.html"], [
+    "createSignedUrl(attachment.url, 300)",
+    "async function enviarAnexoDocumento",
+    "file.size > 10485760",
+    "allowedTypes.has(file.type)",
+    ".storage.from('documentos').upload(objectPath",
+    "from('anexos').insert",
+    ".storage.from('documentos').remove([objectPath])",
+    "setButtonLoading",
+    "documentAttachmentInput",
   ]);
 });
 
