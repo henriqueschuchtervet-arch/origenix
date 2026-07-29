@@ -111,10 +111,19 @@
       const [{data:companies,error},{data:catalog}]=await Promise.all([sb.from('empresas').select('id,nome,tipo_estabelecimento').order('nome'),sb.from('pac_modelos').select('*').eq('ativo',true).order('ordem')]);
       if(error){toast('Não foi possível carregar os estabelecimentos.');return}
       models=catalog||[];$('company').innerHTML=(companies||[]).map(c=>`<option value="${c.id}">${escapeHtml(c.nome)}</option>`).join('');
+      const requestedCompany=new URLSearchParams(location.search).get('empresa');
+      if(requestedCompany&&(companies||[]).some(company=>company.id===requestedCompany)){
+        $('company').value=requestedCompany;
+      }
       if(companies?.length)await loadCompany();else $('pacGrid').innerHTML='<div class="empty">Nenhum estabelecimento acessível.</div>';
     }
 
-    $('company').onchange=loadCompany;$('search').oninput=render;
+    $('company').onchange=()=>{
+      const url=new URL(location.href);
+      url.searchParams.set('empresa',$('company').value);
+      history.replaceState({},'',url);
+      loadCompany();
+    };$('search').oninput=render;
     $('configureButton').onclick=async()=>{
       if(!['administrador','rt','consultor'].includes(role)){toast('Seu perfil possui acesso somente para consulta.');return}
       const companyId=$('company').value;if(!companyId)return;
