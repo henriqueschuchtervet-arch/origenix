@@ -35,6 +35,7 @@ const requiredFiles = [
   "recuperar-senha.html",
   "ui-enhancements.js",
   "origenix-supabase.js",
+  "origenix-auth.js",
   "origenix-v4.css",
   "_headers",
   "README.md",
@@ -567,6 +568,36 @@ contract("configuração Supabase é centralizada e validada", () => {
     assert.ok(!files[path].includes("sb_publishable_"), `${path} ainda repete a chave pública`);
     assert.ok(!files[path].includes("kdlyjcaxopypqeitazan.supabase.co"), `${path} ainda repete a URL`);
     assert.ok(!files[path].includes("window.supabase.createClient"), `${path} ignora o módulo compartilhado`);
+  });
+});
+
+contract("autenticação compartilhada preserva callbacks locais", () => {
+  new vm.Script(files["origenix-auth.js"], { filename: "origenix-auth.js" });
+  includesAll(files["origenix-auth.js"], [
+    "normalizeCredentials",
+    "signInWithPassword",
+    "signUp",
+    "onAuthStateChange",
+    "getUser",
+    "AuthSessionMissingError",
+    "window.OrigenixAuth = Object.freeze",
+  ]);
+  [
+    "origenix-dashboard-v3.html",
+    "origenix-emissao-v3.html",
+    "origenix-sistema-login.html",
+  ].forEach((path) => {
+    includesAll(files[path], [
+      "origenix-auth.js?v=1.0",
+      "window.OrigenixAuth.authenticate",
+      "window.OrigenixAuth.observeSession",
+      "window.OrigenixAuth.signOut",
+      "onAuthenticated",
+    ]);
+    assert.ok(!files[path].includes("function authErrorMessage"), `${path} ainda duplica mensagens Auth`);
+    ["signInWithPassword", "signUp", "onAuthStateChange", "getUser"].forEach((method) => {
+      assert.ok(!files[path].includes(`supa.auth.${method}`), `${path} ainda chama ${method} diretamente`);
+    });
   });
 });
 
