@@ -559,6 +559,14 @@
         <a class="ox-dashboard-action" href="origenix-emissao-v3.html">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3l8 4v5c0 5-3.4 8-8 10-4.6-2-8-5-8-10V7zM9 12l2 2 4-5"/></svg>
           <div><strong>Assinaturas</strong><span>Revisar documentos</span></div>
+        </a>
+        <a class="ox-dashboard-action" href="origenix-sistema-login.html?view=tasks">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          <div><strong>Tarefas</strong><span>Prazos e agenda</span></div>
+        </a>
+        <a class="ox-dashboard-action" href="origenix-sistema-login.html?view=notifications">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M10 21h4"/></svg>
+          <div><strong>Notificações</strong><span>Pendências críticas</span></div>
         </a>`;
       content.prepend(actions);
     }
