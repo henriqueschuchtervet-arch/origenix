@@ -99,6 +99,7 @@
     ["Dashboard", "Visão geral e indicadores", "origenix-dashboard-v3.html"],
     ["Novo cadastro", "Cadastrar estabelecimento", "origenix-sistema-login.html"],
     ["Clientes e documentos", "Gerenciar estabelecimentos", "origenix-sistema-login.html"],
+    ["Programas de autocontrole", "PAC, APPCC, PPHO e auditorias", "origenix-pacs.html"],
     ["Emissão e assinatura", "Documentos prontos para assinatura", "origenix-emissao-v3.html"],
     ["Recuperar senha", "Redefinir acesso", "recuperar-senha.html"],
     ["Site institucional", "Voltar ao site público", "index.html"]
@@ -319,7 +320,8 @@
       ["projetos", "origenix-sistema-login.html"],
       ["documentos", "origenix-sistema-login.html"],
       ["rts & art", "origenix-emissao-v3.html"],
-      ["licenças", "origenix-sistema-login.html"]
+      ["licenças", "origenix-sistema-login.html"],
+      ["auditorias", "origenix-pacs.html"]
     ];
 
     $$(".nav-item").forEach((item) => {
