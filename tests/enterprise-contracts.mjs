@@ -227,6 +227,20 @@ contract("botões e links internos possuem comportamento real", () => {
   }
 });
 
+contract("atalhos abrem o fluxo solicitado", () => {
+  includesAll(files["ui-enhancements.js"], [
+    "origenix-sistema-login.html?view=new",
+    "origenix-sistema-login.html?view=clients",
+    "origenix-sistema-login.html?view=documents",
+  ]);
+  includesAll(files["origenix-sistema-login.html"], [
+    "async function aplicarRotaInicial",
+    "get('view') || 'clients'",
+    "view === 'new'",
+    "view === 'documents'",
+  ]);
+});
+
 const failures = results.filter((result) => !result.ok);
 for (const result of results) {
   console.log(`${result.ok ? "✓" : "✗"} ${result.name}${result.error ? ` — ${result.error}` : ""}`);
