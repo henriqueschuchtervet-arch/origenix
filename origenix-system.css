@@ -238,3 +238,10 @@
 /* External module states */
 .is-hidden{display:none!important}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+
+.auth-brand{padding:0 0 24px;justify-content:center}
+.mt-20{margin-top:20px}.mt-14{margin-top:14px}
+.auth-submit{width:100%;justify-content:center;margin-top:20px}
+.logout-button{width:100%;margin-top:8px}
+.empty-padded{padding:24px 0}
+#docView.document-visible{display:block!important}
