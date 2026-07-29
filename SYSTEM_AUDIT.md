@@ -627,3 +627,34 @@ modifica dados e mantém a integração atual com Supabase, GitHub e Netlify.
 - O foco foi direcionado ao campo com erro.
 - Botões retornaram ao estado habilitado e ao texto original.
 - Nenhuma conta ou sessão real foi criada durante os testes.
+
+## Ciclo 25 — dependência Supabase determinística
+
+### Diagnóstico
+
+- As seis páginas carregavam `@supabase/supabase-js@2`, uma referência flutuante.
+- Uma nova versão compatível com o major poderia ser entregue sem revisão do projeto.
+
+### Implementação
+
+- Confirmada a release estável `2.111.0`, publicada em 28 de julho de 2026.
+- As seis páginas passaram a carregar o bundle exato `dist/umd/supabase.js`.
+- A tag registra a versão em `data-supabase-version`.
+- A requisição usa `crossorigin="anonymous"` e `referrerpolicy="no-referrer"`.
+- Um contrato automatizado proíbe o retorno da referência flutuante `@2`.
+- O README documenta o procedimento de atualização da dependência.
+
+### Integridade e proveniência
+
+- A release oficial é imutável e assinada no GitHub.
+- O registro npm publica integridade do tarball e atestação de proveniência.
+- O hash do tarball não foi usado como SRI do bundle UMD, pois são arquivos diferentes.
+- SRI somente deverá ser aplicado após hash do bundle exato ou vendorização no domínio próprio.
+
+### Verificações
+
+- 37 contratos enterprise aprovados no GitHub Actions.
+- O preview carregou `2.111.0` com os atributos esperados.
+- Autenticação continuou validando mensagem, foco e botão.
+- Recuperação de senha permaneceu disponível.
+- Formulário de diagnóstico continuou abrindo normalmente.
