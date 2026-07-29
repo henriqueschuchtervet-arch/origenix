@@ -76,3 +76,68 @@ modifica dados e mantém a integração atual com Supabase, GitHub e Netlify.
 - Perfis sem acesso administrativo recebem estado explícito em vez de números
   enganosos.
 - Foram eliminadas consultas `select('*')` no carregamento do dashboard.
+
+## Gestão enterprise de estabelecimentos
+
+- A listagem ganhou pesquisa instantânea por nome, CNPJ, município, responsável
+  técnico e tipo de estabelecimento.
+- Foram adicionados filtros de ativos, arquivados e todos, com estado visual
+  explícito.
+- O cadastro passou a oferecer edição no mesmo fluxo, cancelamento seguro,
+  loading e mensagens de sucesso ou erro.
+- A exclusão física foi substituída por arquivamento reversível, evitando perda
+  acidental de histórico e documentos relacionados.
+- A consulta deixou de usar `select('*')`, solicita somente os campos necessários
+  e limita o lote inicial a 250 registros.
+- A emissão documental e o versionamento atômico existentes foram preservados.
+
+### Banco e compatibilidade
+
+- A migration `011_empresas_arquivamento.sql` adiciona `ativo` e `arquivado_em`
+  sem remover ou transformar dados existentes.
+- O índice `idx_empresas_ativo_criado_em` prepara a listagem por situação e
+  data de criação.
+- A migration foi aplicada no projeto Supabase e validada por consulta ao
+  catálogo do PostgreSQL.
+
+### Validações deste ciclo
+
+- JavaScript inline validado por parser, sem erro de sintaxe.
+- Presença das rotinas de numeração automática e versionamento confirmada.
+- Ausência de exclusão física no fluxo de estabelecimentos confirmada.
+- Página publicada carregada no deploy de preview da Netlify.
+- Advisors de segurança e desempenho do Supabase executados após o DDL.
+
+### Riscos acompanhados
+
+- A proteção contra senhas vazadas permanece desabilitada no Supabase Auth.
+- A tabela legada `usuarios` possui RLS habilitado sem policy; o modelo ativo de
+  autorização utiliza `profiles` e `empresa_membros`, portanto a correção exige
+  confirmar primeiro se a tabela ainda possui consumidores.
+- Índices recém-criados aparecem como não utilizados até haver tráfego suficiente;
+  não devem ser removidos com base nesse aviso inicial.
+
+## Escala da listagem de estabelecimentos
+
+- A listagem deixou de carregar um lote fixo de 250 registros e passou a usar
+  paginação real no Supabase, com 20 itens por página.
+- A pesquisa por nome, CNPJ, município, responsável técnico e tipo de
+  estabelecimento agora é executada no servidor.
+- A entrada de pesquisa possui debounce de 320 ms, evitando uma consulta a cada
+  tecla digitada.
+- Respostas antigas são ignoradas por um identificador sequencial, impedindo que
+  uma busca lenta sobrescreva resultados mais recentes.
+- A interface informa o intervalo exibido, o total de resultados e a página
+  atual, com botões anterior/próxima acessíveis e responsivos.
+- A emissão documental reutiliza o estabelecimento já carregado e só consulta um
+  registro individual quando necessário, evitando recarregar a listagem.
+
+### Validações deste ciclo
+
+- JavaScript inline analisado sem erros de sintaxe.
+- Paginação, `count: exact`, busca remota, debounce e tratamento de corrida
+  confirmados no código publicado.
+- Numeração automática, versionamento documental e arquivamento reversível
+  preservados.
+- Novo SHA do arquivo confirmado na branch de trabalho.
+- Tela de autenticação carregada com sucesso no deploy de preview da Netlify.
