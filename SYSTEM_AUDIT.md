@@ -506,3 +506,28 @@ modifica dados e mantém a integração atual com Supabase, GitHub e Netlify.
 - JavaScript inline analisado sem erros de sintaxe.
 - O CI aprovou 18 de 18 contratos em oito segundos.
 - O deploy da Netlify foi concluído com sucesso.
+
+
+## Ciclo 21 — consistência visual e autenticação
+
+### Problema identificado
+
+- A camada compartilhada procurava o primeiro botão com o texto `Entrar`.
+- Nas páginas com abas de autenticação, a aba `Entrar` era confundida com o botão principal do formulário.
+- Isso inseria recuperação de senha e retorno ao site no meio das abas.
+- O dashboard não carregava a superfície visual do painel antes da camada de melhorias, provocando inconsistência e sensação de lentidão.
+
+### Correções implementadas
+
+- O botão de autenticação passou a ser localizado prioritariamente pelo identificador estável `#btnAuth`.
+- A busca alternativa ignora explicitamente elementos `.login-tab`.
+- O design system compartilhado passou a ser carregado no `head` das duas páginas.
+- A superfície `.panel` e o cartão de login do dashboard receberam acabamento consistente com o restante do produto.
+- O JavaScript compartilhado recebeu versionamento `v4.4` para invalidar caches antigos.
+
+### Verificações
+
+- Login do dashboard validado visualmente no preview da Netlify.
+- Login do sistema validado no DOM publicado: ações aparecem imediatamente depois de `#btnAuth` e as abas permanecem consecutivas.
+- O preview publicou `ui-enhancements.js?v=4.4`.
+- GitHub Actions concluiu com sucesso os 33 contratos enterprise.
