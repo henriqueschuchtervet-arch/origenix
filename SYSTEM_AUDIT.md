@@ -357,6 +357,22 @@ modifica dados e mantém a integração atual com Supabase, GitHub e Netlify.
 - Gatilho `auditar_exclusao_anexo` e cinco índices de auditoria confirmados.
 - Advisor de segurança sem novos alertas; permanece apenas a proteção opcional contra senhas vazadas.
 - GitHub Actions aprovou 24 contratos automatizados.
+
+## Ciclo 16 — cobertura automática das operações principais
+
+- A criação, atualização, arquivamento e restauração de empresas agora geram eventos internos.
+- A emissão e a mudança de status de documentos também passam a compor a trilha.
+- Alterações de empresa registram apenas nomes de campos relevantes, evitando duplicação de dados pessoais.
+- Eventos documentais registram código, tipo, versão e transição de status.
+- Os novos eventos foram adicionados aos filtros e às descrições amigáveis da Central de Auditoria.
+- As funções de gatilho não possuem permissão de execução para usuários autenticados.
+
+### Verificações
+
+- Três gatilhos ativos confirmados: exclusão de anexos, operações de empresas e operações de documentos.
+- Supabase confirmou `authenticated_execute = false` nas três funções internas.
+- Advisor de segurança permaneceu sem novos alertas.
+- GitHub Actions aprovou 25 contratos automatizados.
 - O painel consolida código, UUID, SHA-256, status, empresa, tipo, versão atual e
   data de emissão.
 - A linha do tempo carrega todas as versões permitidas pela RLS, ordenadas da mais
