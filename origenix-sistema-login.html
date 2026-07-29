@@ -442,6 +442,22 @@ async function handleAuth(){
 
 async function handleLogout(){ await supa.auth.signOut(); }
 
+async function aplicarRotaInicial(){
+  const view = new URLSearchParams(location.search).get('view') || 'clients';
+  if(view === 'new'){
+    await renderClientList();
+    novoCadastro();
+    return;
+  }
+  switchTab('clientes');
+  if(view === 'documents'){
+    window.setTimeout(()=>{
+      showToast('Selecione um estabelecimento e use “Gerar documento”.');
+      document.getElementById('clientSearch')?.focus();
+    }, 350);
+  }
+}
+
 async function onAuthenticated(user){
   if(!user) return;
   const sameUser = currentUser && currentUser.id === user.id;
@@ -456,7 +472,10 @@ async function onAuthenticated(user){
   canCreateDocuments = ['administrador','rt','consultor'].includes(currentRole);
   canDeleteCompanies = currentRole === 'administrador';
 
-  if(!sameUser) await testConnection().then(renderClientList);
+  if(!sameUser){
+    await testConnection();
+    await aplicarRotaInicial();
+  }
 }
 
 async function initAuth(){
