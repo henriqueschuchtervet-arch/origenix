@@ -177,6 +177,56 @@ contract("Netlify aplica cabeçalhos de segurança", () => {
   ]);
 });
 
+contract("botões e links internos possuem comportamento real", () => {
+  const htmlFiles = requiredFiles.filter((name) => name.endsWith(".html"));
+  const sharedUi = files["ui-enhancements.js"];
+
+  for (const path of htmlFiles) {
+    const html = files[path];
+    const buttons = [...html.matchAll(/<button\b([^>]*)>/gi)];
+    for (const [index, match] of buttons.entries()) {
+      const attributes = match[1];
+      const id = attributes.match(/\bid=["']([^"']+)/i)?.[1];
+      const ariaLabel = attributes.match(/\baria-label=["']([^"']+)/i)?.[1];
+      const hasInlineAction = /\bonclick\s*=/i.test(attributes);
+      const submitsForm = /\btype=["']submit/i.test(attributes);
+      const referencedById = id && (
+        html.includes(`getElementById('${id}')`)
+        || html.includes(`getElementById("${id}")`)
+        || new RegExp(`\\$\\(['"]${id}['"]\\)`).test(html)
+      );
+      const enhancedBySharedUi = ariaLabel
+        && sharedUi.includes(`button[aria-label="${ariaLabel}"]`);
+
+      assert.ok(
+        hasInlineAction || submitsForm || referencedById || enhancedBySharedUi,
+        `${path}: botão ${index + 1} não possui ação detectável`,
+      );
+    }
+
+    const links = [...html.matchAll(/<a\b([^>]*)>/gi)];
+    for (const [index, match] of links.entries()) {
+      const attributes = match[1];
+      assert.ok(
+        !/href=["']javascript:/i.test(attributes),
+        `${path}: link ${index + 1} usa URL JavaScript`,
+      );
+      const hash = attributes.match(/\bhref=["']#([^"']*)/i)?.[1];
+      if (hash) {
+        assert.ok(
+          html.includes(`id="${hash}"`) || html.includes(`id='${hash}'`),
+          `${path}: link ${index + 1} aponta para #${hash}, mas o destino não existe`,
+        );
+      } else if (/\bhref=["']#["']/i.test(attributes)) {
+        assert.ok(
+          /\bonclick\s*=/i.test(attributes),
+          `${path}: link ${index + 1} usa # sem ação`,
+        );
+      }
+    }
+  }
+});
+
 const failures = results.filter((result) => !result.ok);
 for (const result of results) {
   console.log(`${result.ok ? "✓" : "✗"} ${result.name}${result.error ? ` — ${result.error}` : ""}`);
