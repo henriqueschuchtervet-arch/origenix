@@ -398,6 +398,33 @@ modifica dados e mantém a integração atual com Supabase, GitHub e Netlify.
 - Função interna confirmada sem permissão de execução para `authenticated`.
 - Advisor de segurança permaneceu sem novos alertas.
 - GitHub Actions aprovou 26 contratos automatizados.
+
+## Ciclo 18 — Central de Notificações operacionais
+
+- Adicionado um sino no cabeçalho e uma área dedicada na navegação principal.
+- O badge apresenta a quantidade real de notificações não lidas.
+- A central deriva alertas de tarefas abertas, prioridades, prazos e documentos pendentes.
+- Tarefas vencidas ou críticas recebem destaque crítico; prazos próximos e documentos em revisão recebem atenção.
+- Documentos gerados há mais de sete dias sem formalização também aparecem como acompanhamento.
+- Pesquisa e filtros por tipo e estado de leitura funcionam sem novas consultas ao banco.
+- Cada notificação conduz ao estabelecimento ou dossiê correspondente.
+- A rota `?view=notifications` abre diretamente a central após autenticação.
+
+### Persistência e isolamento
+
+- Tarefas ganharam prioridade, prazo, conclusão e atualização com índices apropriados.
+- Leituras persistem em `notificacao_leituras`, isoladas por `auth.uid()`.
+- O usuário pode consultar, incluir e atualizar apenas os próprios recibos.
+- Não há permissão para excluir ou truncar os registros de leitura.
+- Consultas de tarefas e documentos continuam submetidas às RLS originais.
+
+### Verificações
+
+- Novas colunas e índices confirmados no Supabase.
+- Policies `SELECT`, `INSERT` e `UPDATE` confirmadas para recibos de leitura.
+- Privilégios limitados exatamente às três operações necessárias.
+- Advisor de segurança permaneceu sem novos alertas.
+- GitHub Actions aprovou 28 contratos automatizados.
 - O painel consolida código, UUID, SHA-256, status, empresa, tipo, versão atual e
   data de emissão.
 - A linha do tempo carrega todas as versões permitidas pela RLS, ordenadas da mais
