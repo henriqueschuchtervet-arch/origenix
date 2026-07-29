@@ -119,14 +119,74 @@ body { text-rendering: optimizeLegibility; }
 }
 .ox-toast { max-width: min(440px, calc(100% - 28px)); }
 
+.ox-dialog-overlay {
+  position: fixed; inset: 0; z-index: 340; display: grid; place-items: center;
+  padding: 20px; background: rgba(0, 0, 0, 0.76); backdrop-filter: blur(8px);
+  animation: ox-dialog-in 160ms var(--ox-ease);
+}
+.ox-dialog {
+  width: min(520px, 100%); max-height: min(720px, calc(100vh - 40px)); overflow: auto;
+  border: 1px solid var(--ox-border-strong); border-radius: 16px;
+  color: var(--ox-text); background: var(--ox-surface);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.6);
+}
+.ox-dialog-header {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 20px;
+  padding: 22px 22px 16px; border-bottom: 1px solid var(--ox-border);
+}
+.ox-dialog-title { margin: 0; color: var(--ox-text); font: 750 18px Inter, sans-serif; }
+.ox-dialog-description { margin: 7px 0 0; color: var(--ox-muted); font: 450 13px/1.55 Inter, sans-serif; }
+.ox-dialog-close {
+  width: 38px; height: 38px; flex: 0 0 auto; padding: 0; border: 1px solid transparent;
+  border-radius: 9px; color: var(--ox-muted); background: transparent; font-size: 20px;
+}
+.ox-dialog-close:hover { color: var(--ox-text); background: var(--ox-surface-raised); }
+.ox-dialog-body { display: grid; gap: 15px; padding: 20px 22px; }
+.ox-dialog-field { display: grid; gap: 7px; }
+.ox-dialog-field label {
+  margin: 0; color: var(--ox-muted); font: 700 11px Inter, sans-serif;
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+.ox-dialog-field :where(input, select, textarea) {
+  width: 100%; min-height: 44px; border: 1px solid var(--ox-border-strong);
+  border-radius: 9px; padding: 11px 12px; color: var(--ox-text); background: #09090a;
+  font: 500 14px Inter, sans-serif;
+}
+.ox-dialog-field textarea { min-height: 112px; resize: vertical; line-height: 1.5; }
+.ox-dialog-error {
+  display: none; margin: 0; padding: 10px 12px; border: 1px solid rgba(255, 92, 92, 0.35);
+  border-radius: 8px; color: #ffb0b0; background: rgba(255, 92, 92, 0.08);
+  font: 600 12px Inter, sans-serif;
+}
+.ox-dialog-error.show { display: block; }
+.ox-dialog-actions {
+  display: flex; justify-content: flex-end; gap: 9px; padding: 16px 22px 20px;
+  border-top: 1px solid var(--ox-border);
+}
+.ox-dialog-actions button { min-height: 42px; padding: 0 16px; border-radius: 9px; }
+.ox-dialog-cancel {
+  border: 1px solid var(--ox-border-strong); color: var(--ox-text);
+  background: var(--ox-surface-raised);
+}
+.ox-dialog-confirm { border: 1px solid var(--ox-accent); color: #fff; background: var(--ox-accent); }
+.ox-dialog-confirm:hover { background: var(--ox-accent-hover) !important; }
+.ox-dialog-confirm.danger { border-color: var(--ox-danger); background: #c52d2d; }
+
 @keyframes ox-spin { to { transform: rotate(360deg); } }
 @keyframes ox-ripple {
   to { opacity: 0; transform: translate(-50%, -50%) scale(15); }
+}
+@keyframes ox-dialog-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @media (max-width: 720px) {
   :where(button, .button, [role="button"]) { min-height: 44px; }
   .ox-breadcrumbs { margin-bottom: 14px; }
+  .ox-dialog-overlay { align-items: end; padding: 10px; }
+  .ox-dialog { width: 100%; max-height: calc(100vh - 20px); border-radius: 16px 16px 10px 10px; }
+  .ox-dialog-actions { display: grid; grid-template-columns: 1fr 1fr; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -138,5 +198,7 @@ body { text-rendering: optimizeLegibility; }
 }
 
 @media print {
-  .ox-skip-link, .ox-network-status, .ox-utility, .ox-command-overlay { display: none !important; }
+  .ox-skip-link, .ox-network-status, .ox-utility, .ox-command-overlay, .ox-dialog-overlay {
+    display: none !important;
+  }
 }
