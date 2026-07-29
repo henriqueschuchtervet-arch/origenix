@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800&family=Inter:wght@400;500;600&family=Montserrat:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="origenix-supabase.js?v=1.0"></script>
+<script src="origenix-auth.js?v=1.0"></script>
 <link rel="stylesheet" href="origenix-v4.css?v=4.3" data-ox-v4>
 <style>
   :root{
@@ -368,51 +369,39 @@ function setLoginMsg(msg, type){
   el.className = 'login-msg' + (type ? ' '+type : '');
 }
 
-function authErrorMessage(error){
-  console.error('Falha de autenticação', error);
-  const code = error && error.code;
-  if(code === 'invalid_credentials') return 'E-mail ou senha incorretos.';
-  if(code === 'email_not_confirmed') return 'Confirme seu e-mail antes de entrar.';
-  if(code === 'user_already_exists' || code === 'email_exists') return 'Este e-mail já possui uma conta.';
-  if(code === 'over_request_rate_limit') return 'Muitas tentativas. Aguarde alguns minutos.';
-  if(code === 'weak_password') return 'Use uma senha mais forte, com pelo menos 8 caracteres.';
-  return 'Não foi possível concluir. Tente novamente.';
-}
+
 
 async function handleAuth(){
   const emailInput = document.getElementById('auth_email');
   const passwordInput = document.getElementById('auth_password');
-  const email = emailInput.value.trim().toLowerCase();
-  const password = passwordInput.value;
-  if(!email || !email.includes('@')){ setLoginMsg('Informe um e-mail válido.', 'error'); emailInput.focus(); return; }
-  if(password.length < 6){ setLoginMsg('A senha deve ter pelo menos 6 caracteres.', 'error'); passwordInput.focus(); return; }
-  if(!supa){ setLoginMsg('Serviço temporariamente indisponível.', 'error'); return; }
+  const validation = window.OrigenixAuth.normalizeCredentials(emailInput.value, passwordInput.value);
+  if(!validation.ok){
+    setLoginMsg(validation.message, 'error');
+    (validation.field === 'email' ? emailInput : passwordInput).focus();
+    return;
+  }
 
   const btn = document.getElementById('btnAuth');
-  btn.disabled = true;
   const originalLabel = btn.textContent;
+  btn.disabled = true;
   btn.textContent = authMode === 'login' ? 'Entrando...' : 'Criando conta...';
   setLoginMsg('');
 
   try {
-    if(authMode === 'login'){
-      const { error } = await supa.auth.signInWithPassword({ email, password });
-      if(error){ setLoginMsg(authErrorMessage(error), 'error'); return; }
-    } else {
-      const { data, error } = await supa.auth.signUp({
-        email,
-        password,
-        options: { emailRedirectTo: new URL('origenix-dashboard-v3.html', location.href).href }
-      });
-      if(error){ setLoginMsg(authErrorMessage(error), 'error'); return; }
-      if(!data.session){
-        passwordInput.value = '';
-        setLoginMsg('Conta criada! Confira seu e-mail para confirmar o acesso.', 'ok');
-      }
+    const result = await window.OrigenixAuth.authenticate({
+      client: supa,
+      mode: authMode === 'login' ? 'login' : 'signup',
+      email: validation.email,
+      password: validation.password,
+      emailRedirectTo: authMode === 'signup'
+        ? new URL('origenix-dashboard-v3.html', location.href).href
+        : undefined,
+    });
+    if(!result.ok){ setLoginMsg(result.message, 'error'); return; }
+    if(result.requiresEmailConfirmation){
+      passwordInput.value = '';
+      setLoginMsg('Conta criada! Confira seu e-mail para confirmar o acesso.', 'ok');
     }
-  } catch(error){
-    console.error(error);
-    setLoginMsg('Falha de conexão. Verifique sua internet e tente novamente.', 'error');
   } finally {
     btn.disabled = false;
     btn.textContent = originalLabel;
@@ -420,7 +409,7 @@ async function handleAuth(){
 }
 
 async function handleLogout(){
-  const { error } = await supa.auth.signOut();
+  const { error } = await window.OrigenixAuth.signOut(supa);
   if(error){ console.error(error); return; }
   currentUser = null;
   document.getElementById('mainApp').style.display = 'none';
@@ -440,29 +429,21 @@ async function onAuthenticated(user){
 }
 
 async function initAuth(){
-  if(!supa){
-    setLoginMsg('Não foi possível conectar ao serviço de autenticação.', 'error');
-    return;
-  }
-
-  supa.auth.onAuthStateChange((event, session) => {
-    setTimeout(() => {
-      if(session && session.user) onAuthenticated(session.user);
-      else if(event === 'SIGNED_OUT'){
-        currentUser = null;
-        document.getElementById('mainApp').style.display = 'none';
-        document.getElementById('loginView').style.display = 'flex';
-      }
-    }, 0);
+  await window.OrigenixAuth.observeSession({
+    client: supa,
+    onAuthenticated,
+    onSignedOut(){
+      currentUser = null;
+      document.getElementById('mainApp').style.display = 'none';
+      document.getElementById('loginView').style.display = 'flex';
+    },
+    onMissingSession(){
+      document.getElementById('loginView').style.display = 'flex';
+      document.getElementById('mainApp').style.display = 'none';
+    },
+    onUnavailable(){ setLoginMsg('Não foi possível conectar ao serviço de autenticação.', 'error'); },
+    onError(error){ console.error(error); },
   });
-
-  const { data, error } = await supa.auth.getUser();
-  if(error && error.name !== 'AuthSessionMissingError') console.error(error);
-  if(data && data.user) await onAuthenticated(data.user);
-  else {
-    document.getElementById('loginView').style.display = 'flex';
-    document.getElementById('mainApp').style.display = 'none';
-  }
 }
 
 function setConnStatus(state, msg){
