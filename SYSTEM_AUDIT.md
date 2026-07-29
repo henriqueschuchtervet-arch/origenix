@@ -42,7 +42,16 @@ modifica dados e mantém a integração atual com Supabase, GitHub e Netlify.
 
 ## Próximo lote recomendado
 
-- Substituir `prompt` e `confirm` nativos por diálogos acessíveis.
 - Extrair componentes e serviços dos HTMLs monolíticos de forma incremental.
 - Adicionar testes automatizados de navegação, autenticação e permissões.
 - Fixar a versão do cliente Supabase carregado pelo CDN.
+
+## Evolução do lote — diálogos operacionais
+
+- `prompt` e `confirm` foram removidos dos fluxos de registros e não
+  conformidades dos PACs.
+- O novo diálogo compartilhado possui foco inicial, contenção de foco,
+  fechamento por `Esc`, validação nativa, mensagem de erro, cancelamento e
+  restauração do foco anterior.
+- O registro de monitoramento agora coleta descrição e resultado numa única
+  operação, reduzindo cliques e ambiguidades.
