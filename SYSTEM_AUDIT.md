@@ -242,3 +242,27 @@ modifica dados e mantém a integração atual com Supabase, GitHub e Netlify.
   aprovados.
 - A verificação `Header rules` da Netlify foi concluída com sucesso e o preview
   foi publicado.
+
+## Controles e atalhos operacionais
+
+- Os seis módulos HTML foram auditados cruzando botões, links, identificadores e
+  handlers JavaScript.
+- Nenhum botão morto foi encontrado; o sino do dashboard é conectado pela camada
+  compartilhada e deixou de ser tratado como falso positivo.
+- Links internos com fragmento são validados contra o `id` de destino.
+- Links `javascript:` e links `#` sem ação agora quebram o CI.
+- O contrato automatizado passou a impedir a introdução de controles sem
+  comportamento real.
+
+### Correção de fluxo
+
+- `Novo cadastro`, `Clientes` e `Documentos` deixaram de abrir a mesma tela
+  genérica.
+- Cada atalho agora transmite a intenção por `view=new`, `view=clients` ou
+  `view=documents`.
+- A área autenticada interpreta a rota, abre a aba correta e, no fluxo documental,
+  orienta o usuário a selecionar o estabelecimento.
+- O acesso direto ao sistema abre a lista de clientes por padrão; o formulário de
+  cadastro é aberto somente quando solicitado.
+- O CI final aprovou 16 de 16 contratos em quatro segundos e o deploy da Netlify
+  foi concluído com sucesso.
