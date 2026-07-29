@@ -67,3 +67,12 @@ modifica dados e mantém a integração atual com Supabase, GitHub e Netlify.
   reagir somente quando botões ou campos de senha são adicionados.
 - Permanece planejada a extração das imagens Base64 repetidas, principal custo de
   transferência e análise inicial dos HTMLs monolíticos.
+
+## Dashboard executivo — consultas
+
+- Contadores utilizam `count: exact` e não dependem mais do tamanho das listas.
+- Tabelas recentes carregam somente oito registros e apenas as colunas exibidas.
+- Leads são consultados exclusivamente para administradores.
+- Perfis sem acesso administrativo recebem estado explícito em vez de números
+  enganosos.
+- Foram eliminadas consultas `select('*')` no carregamento do dashboard.
