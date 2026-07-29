@@ -601,6 +601,29 @@ contract("autenticação compartilhada preserva callbacks locais", () => {
   });
 });
 
+contract("cliente Supabase usa versão exata e requisição privada", () => {
+  const pages = [
+    "index.html",
+    "origenix-dashboard-v3.html",
+    "origenix-emissao-v3.html",
+    "origenix-sistema-login.html",
+    "origenix-pacs.html",
+    "recuperar-senha.html",
+  ];
+  pages.forEach((path) => {
+    includesAll(files[path], [
+      "@supabase/supabase-js@2.111.0/dist/umd/supabase.js",
+      'data-supabase-version="2.111.0"',
+      'crossorigin="anonymous"',
+      'referrerpolicy="no-referrer"',
+    ]);
+    assert.ok(
+      !files[path].includes('@supabase/supabase-js@2"'),
+      `${path} ainda usa versão flutuante do Supabase`,
+    );
+  });
+});
+
 const failures = results.filter((result) => !result.ok);
 for (const result of results) {
   console.log(`${result.ok ? "✓" : "✗"} ${result.name}${result.error ? ` — ${result.error}` : ""}`);
