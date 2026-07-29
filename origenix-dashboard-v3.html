@@ -489,88 +489,32 @@ function timeAgo(dateStr){
 }
 
 async function loadDashboard(){
-  setConnStatus(null, 'Conectando ao banco de dados...');
-
-  const [empresasRes, documentosRes, perfilRes] = await Promise.all([
-    supa.from('empresas').select('*').order('criado_em', { ascending:false }),
-    supa.from('documentos').select('*, empresas(nome)').order('criado_em', { ascending:false }).limit(8),
-    supa.from('perfis').select('papel').eq('user_id', currentUser.id).maybeSingle()
-  ]);
-
-  const isAdmin = perfilRes.data && perfilRes.data.papel === 'administrador';
-  const leadsRes = isAdmin
-    ? await supa.from('leads').select('*').order('criado_em', { ascending:false })
-    : { data: [], error: null };
-
-  if(empresasRes.error || documentosRes.error){
-    const err = empresasRes.error || documentosRes.error;
-    console.error('Falha ao carregar dashboard', err);
-    setConnStatus('error', 'Não foi possível carregar todos os dados. Tente atualizar.');
-  } else {
-    setConnStatus('ok', isAdmin ? 'Conectado como Administrador' : 'Conectado com acesso protegido');
-  }
-  if(perfilRes.error) console.error('Falha ao carregar perfil', perfilRes.error);
-  if(leadsRes.error) console.error('Falha ao carregar leads', leadsRes.error);
-
-  const empresas = empresasRes.data || [];
-  const documentos = documentosRes.data || [];
-  const leads = leadsRes.data || [];
-
-  document.getElementById('kpiEmpresas').textContent = empresas.length;
-  document.getElementById('sidebarClientes').textContent = empresas.length;
-  document.getElementById('kpiDocumentos').textContent = documentos.length;
-  document.getElementById('kpiLeads').textContent = leads.length;
-  document.getElementById('kpiLeadsNovos').textContent = leads.filter(l=>l.status==='novo' || !l.status).length;
-
-  // Tabela de estabelecimentos
-  const tbody = document.getElementById('empresasTableBody');
-  if(empresas.length===0){
-    tbody.innerHTML = '<tr><td colspan="4" class="empty-row">Nenhum estabelecimento cadastrado. <a href="origenix-sistema-login.html" style="color:#ff3030;font-weight:700;">Cadastrar agora</a></td></tr>';
-  } else {
-    tbody.innerHTML = empresas.map(e=>`
-      <tr>
-        <td class="client-cell"><b>${escapeHtml(e.nome)}</b><span>${escapeHtml(e.municipio||'—')}</span></td>
-        <td>${escapeHtml(e.tipo_estabelecimento||'—')}</td>
-        <td>${escapeHtml(e.rt_nome||'—')}</td>
-        <td>${escapeHtml(e.inspecao||'—')}</td>
-      </tr>
-    `).join('');
-  }
-
-  // Documentos recentes
-  const docList = document.getElementById('documentosList');
-  if(documentos.length===0){
-    docList.innerHTML = '<div class="empty-row">Nenhum documento emitido ainda.</div>';
-  } else {
-    docList.innerHTML = documentos.map(d=>`
-      <div class="lead-row">
-        <div class="info">
-          <b>${escapeHtml(d.titulo||d.tipo||'Documento')}</b>
-          <span>${escapeHtml(d.empresas ? d.empresas.nome : '—')} · ${escapeHtml(d.codigo||'')}</span>
-        </div>
-        <div class="time2">${timeAgo(d.criado_em)}</div>
-      </div>
-    `).join('');
-  }
-
-  // Leads
-  const leadsList = document.getElementById('leadsList');
-  if(leads.length===0){
-    leadsList.innerHTML = '<div class="empty-row">Nenhum lead recebido ainda.</div>';
-  } else {
-    leadsList.innerHTML = leads.map(l=>`
-      <div class="lead-row">
-        <div class="info">
-          <b>${escapeHtml(l.nome)}</b>
-          <span>${escapeHtml(l.empresa||'—')} · ${escapeHtml(l.telefone||l.email||'sem contato')}</span>
-        </div>
-        <div style="text-align:right;flex-shrink:0;">
-          <span class="lead-badge ${l.status==='contatado' ? 'contatado' : 'novo'}">${(l.status||'novo').toUpperCase()}</span>
-          <div class="time2" style="margin-top:6px;">${timeAgo(l.criado_em)}</div>
-        </div>
-      </div>
-    `).join('');
-  }
+  setConnStatus(null,'Atualizando indicadores...');
+  const perfil=await supa.from('perfis').select('papel').eq('user_id',currentUser.id).maybeSingle();
+  const isAdmin=perfil.data?.papel==='administrador';
+  const requests=[
+    supa.from('empresas').select('id,nome,municipio,tipo_estabelecimento,rt_nome,inspecao',{count:'exact'}).order('criado_em',{ascending:false}).limit(8),
+    supa.from('documentos').select('id,titulo,tipo,codigo,criado_em,empresas(nome)',{count:'exact'}).order('criado_em',{ascending:false}).limit(8)
+  ];
+  if(isAdmin)requests.push(
+    supa.from('leads').select('id,nome,empresa,telefone,email,status,criado_em',{count:'exact'}).order('criado_em',{ascending:false}).limit(8),
+    supa.from('leads').select('id',{count:'exact',head:true}).or('status.eq.novo,status.is.null')
+  );
+  const [empresasRes,documentosRes,leadsRes={data:[],count:0},novosRes={count:0}]=await Promise.all(requests);
+  const results=[perfil,empresasRes,documentosRes,leadsRes,novosRes];
+  if(results.some(result=>result?.error)){
+    results.filter(result=>result?.error).forEach(result=>console.error('Falha ao carregar dashboard',result.error));
+    setConnStatus('error','Alguns dados não foram carregados. Tente atualizar.');
+  }else setConnStatus('ok',isAdmin?'Conectado como Administrador':'Conectado com acesso protegido');
+  const empresas=empresasRes.data||[],documentos=documentosRes.data||[],leads=leadsRes.data||[];
+  document.getElementById('kpiEmpresas').textContent=empresasRes.count??0;
+  document.getElementById('sidebarClientes').textContent=empresasRes.count??0;
+  document.getElementById('kpiDocumentos').textContent=documentosRes.count??0;
+  document.getElementById('kpiLeads').textContent=isAdmin?(leadsRes.count??0):'—';
+  document.getElementById('kpiLeadsNovos').textContent=isAdmin?(novosRes.count??0):'—';
+  document.getElementById('empresasTableBody').innerHTML=empresas.length?empresas.map(e=>`<tr><td class="client-cell"><b>${escapeHtml(e.nome)}</b><span>${escapeHtml(e.municipio||'—')}</span></td><td>${escapeHtml(e.tipo_estabelecimento||'—')}</td><td>${escapeHtml(e.rt_nome||'—')}</td><td>${escapeHtml(e.inspecao||'—')}</td></tr>`).join(''):'<tr><td colspan="4" class="empty-row">Nenhum estabelecimento cadastrado. <a href="origenix-sistema-login.html" style="color:#ff3030;font-weight:700;">Cadastrar agora</a></td></tr>';
+  document.getElementById('documentosList').innerHTML=documentos.length?documentos.map(d=>`<div class="lead-row"><div class="info"><b>${escapeHtml(d.titulo||d.tipo||'Documento')}</b><span>${escapeHtml(d.empresas?.nome||'—')} · ${escapeHtml(d.codigo||'')}</span></div><div class="time2">${timeAgo(d.criado_em)}</div></div>`).join(''):'<div class="empty-row">Nenhum documento emitido ainda.</div>';
+  document.getElementById('leadsList').innerHTML=!isAdmin?'<div class="empty-row">Disponível para administradores.</div>':leads.length?leads.map(l=>`<div class="lead-row"><div class="info"><b>${escapeHtml(l.nome)}</b><span>${escapeHtml(l.empresa||'—')} · ${escapeHtml(l.telefone||l.email||'sem contato')}</span></div><div style="text-align:right;flex-shrink:0;"><span class="lead-badge ${l.status==='contatado'?'contatado':'novo'}">${(l.status||'novo').toUpperCase()}</span><div class="time2" style="margin-top:6px;">${timeAgo(l.criado_em)}</div></div></div>`).join(''):'<div class="empty-row">Nenhum lead recebido ainda.</div>';
 }
 
 initAuth();
