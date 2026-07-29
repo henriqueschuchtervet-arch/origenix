@@ -151,8 +151,42 @@
         </div></article>`).join('');
     }
     async function changeStatus(id,status){if(!['administrador','rt','consultor'].includes(role)){toast('Acesso somente para consulta.');await loadCompany();return}const {error}=await sb.from('empresa_pacs').update({status,atualizado_em:new Date().toISOString(),...(status==='aprovado'?{aprovado_por:user.id,aprovado_em:new Date().toISOString()}:{})}).eq('id',id);if(error){toast('Falha ao alterar status.');return}toast('Status atualizado.');await loadCompany()}
-    async function addRecord(id){if(!['administrador','rt','consultor'].includes(role)){toast('Acesso somente para consulta.');return}const description=prompt('Descreva o monitoramento ou verificação realizada:');if(!description)return;const result=confirm('O resultado está conforme?')?'conforme':'nao_conforme';const {error}=await sb.from('pac_registros').insert({empresa_pac_id:id,tipo:'monitoramento',resultado:result,descricao:description,registrado_por:user.id});if(error){toast('Falha ao salvar registro.');return}toast('Registro auditável salvo.');if(result==='nao_conforme')addNc(id)}
-    async function addNc(id){if(!['administrador','rt','consultor'].includes(role)){toast('Acesso somente para consulta.');return}const title=prompt('Título da não conformidade:');if(!title)return;const description=prompt('Descreva o desvio identificado:');if(!description)return;const {error}=await sb.from('pac_nao_conformidades').insert({empresa_pac_id:id,titulo:title,descricao:description,criado_por:user.id});if(error){toast('Falha ao registrar não conformidade.');return}toast('Não conformidade aberta.');await loadCompany()}
+    async function addRecord(id){
+      if(!['administrador','rt','consultor'].includes(role)){toast('Acesso somente para consulta.');return}
+      const values=await window.OrigenixUI.openFormDialog({
+        title:'Novo registro de monitoramento',
+        description:'Registre a verificação executada e o resultado encontrado.',
+        confirmLabel:'Salvar registro',
+        fields:[
+          {name:'description',label:'Monitoramento ou verificação',type:'textarea',placeholder:'Descreva o procedimento, evidências e observações...'},
+          {name:'result',label:'Resultado',type:'select',options:[
+            {value:'conforme',label:'Conforme'},
+            {value:'nao_conforme',label:'Não conforme'}
+          ]}
+        ]
+      });
+      if(!values)return;
+      const {error}=await sb.from('pac_registros').insert({empresa_pac_id:id,tipo:'monitoramento',resultado:values.result,descricao:values.description,registrado_por:user.id});
+      if(error){toast('Falha ao salvar registro.');return}
+      toast('Registro auditável salvo.');
+      if(values.result==='nao_conforme')await addNc(id);
+    }
+    async function addNc(id){
+      if(!['administrador','rt','consultor'].includes(role)){toast('Acesso somente para consulta.');return}
+      const values=await window.OrigenixUI.openFormDialog({
+        title:'Abrir não conformidade',
+        description:'Descreva o desvio de forma objetiva para permitir tratamento e verificação.',
+        confirmLabel:'Abrir não conformidade',
+        fields:[
+          {name:'title',label:'Título',type:'text',placeholder:'Ex.: Temperatura fora do limite'},
+          {name:'description',label:'Descrição do desvio',type:'textarea',placeholder:'Informe o local, evidência, limite e condição observada...'}
+        ]
+      });
+      if(!values)return;
+      const {error}=await sb.from('pac_nao_conformidades').insert({empresa_pac_id:id,titulo:values.title,descricao:values.description,criado_por:user.id});
+      if(error){toast('Falha ao registrar não conformidade.');return}
+      toast('Não conformidade aberta.');await loadCompany();
+    }
     init();
   </script>
   <script src="ui-enhancements.js"></script>
