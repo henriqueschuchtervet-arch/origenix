@@ -331,6 +331,32 @@ modifica dados e mantém a integração atual com Supabase, GitHub e Netlify.
 - RPC confirmada como `SECURITY INVOKER`.
 - Advisor de segurança voltou ao estado anterior, sem alerta introduzido por esta entrega.
 - GitHub Actions aprovou 22 contratos de segurança e operação.
+
+## Ciclo 15 — Central de Auditoria
+
+- Adicionada uma área somente leitura na navegação principal para consultar eventos operacionais.
+- A central possui pesquisa com debounce, filtros por empresa, ação e período, paginação no servidor e resumo dos resultados.
+- Eventos exibem ação, detalhes relevantes, estabelecimento, ator e data sem expor dados sensíveis.
+- O menu lateral passou a aceitar navegação por teclado em todas as áreas.
+- A rota `?view=audit` abre diretamente a Central de Auditoria após a autenticação.
+- A consulta usa campos explícitos, limite de 25 registros por página e proteção contra respostas obsoletas.
+- Foram criados índices compostos para ordenação cronológica e filtros por empresa e ação.
+
+### Integridade corrigida
+
+- A chave `auditorias.usuario_id` deixou de apontar para a tabela legada vazia e agora referencia `auth.users(id)`.
+- O cliente perdeu também o privilégio de inserir eventos: possui exclusivamente `SELECT`.
+- Exclusões de anexos geram eventos por gatilho interno do banco, impedindo fabricação de registros pela aplicação.
+- A RPC de exclusão continua como `SECURITY INVOKER` e a função de gatilho não pode ser executada diretamente.
+
+### Verificações
+
+- Supabase confirmou somente a policy `auditorias_select`.
+- Supabase confirmou exclusivamente o privilégio `SELECT` para `authenticated`.
+- Chave estrangeira confirmada contra `auth.users(id) ON DELETE SET NULL`.
+- Gatilho `auditar_exclusao_anexo` e cinco índices de auditoria confirmados.
+- Advisor de segurança sem novos alertas; permanece apenas a proteção opcional contra senhas vazadas.
+- GitHub Actions aprovou 24 contratos automatizados.
 - O painel consolida código, UUID, SHA-256, status, empresa, tipo, versão atual e
   data de emissão.
 - A linha do tempo carrega todas as versões permitidas pela RLS, ordenadas da mais
