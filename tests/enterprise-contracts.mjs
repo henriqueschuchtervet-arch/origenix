@@ -255,6 +255,20 @@ contract("biblioteca documental é pesquisável e paginada", () => {
   ]);
 });
 
+contract("dossiê documental exibe versões e anexos com segurança", () => {
+  includesAll(files["origenix-sistema-login.html"], [
+    "id=\"documentDossierOverlay\"",
+    "async function abrirDossieDocumento",
+    "from('documento_versoes')",
+    "from('anexos')",
+    ".eq('documento_id', id)",
+    "urlSeguraAnexo",
+    "parsed.protocol === 'https:'",
+    "copiarHashDocumento",
+    "documentDossierReturnFocus.focus()",
+  ]);
+});
+
 const failures = results.filter((result) => !result.ok);
 for (const result of results) {
   console.log(`${result.ok ? "✓" : "✗"} ${result.name}${result.error ? ` — ${result.error}` : ""}`);
