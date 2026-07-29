@@ -209,3 +209,19 @@ modifica dados e mantém a integração atual com Supabase, GitHub e Netlify.
 - JavaScript analisado sem erros de sintaxe.
 - Leitura do parâmetro, validação na lista autorizada e atualização de URL
   confirmadas no arquivo publicado.
+
+## Contratos automatizados e CI
+
+- Foi criada uma suíte Node.js sem dependências externas para validar 13 contratos
+  críticos da plataforma.
+- A suíte analisa sintaxe do JavaScript compartilhado e de todos os scripts inline.
+- Recuperação de senha, numeração, versionamento, arquivamento reversível,
+  paginação, visão 360°, contexto dos PACs, acessibilidade, sequência de migrations,
+  papéis e bloqueio da tabela legada possuem verificações explícitas.
+- O workflow `Enterprise contracts` executa em pushes da branch e em pull requests,
+  com permissão somente de leitura, timeout de cinco minutos e cancelamento de
+  execuções obsoletas.
+- A primeira execução encontrou um contrato impreciso, corrigido para validar
+  `:focus-visible` no CSS compartilhado.
+- A execução final aprovou 13 de 13 contratos em oito segundos, sem aviso de
+  runtime obsoleto.
