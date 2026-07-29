@@ -1,0 +1,32 @@
+name: Enterprise contracts
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - agent/sprint-1-foundation
+
+permissions:
+  contents: read
+
+concurrency:
+  group: enterprise-contracts-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Validate security and operational contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Run enterprise contracts
+        run: npm test

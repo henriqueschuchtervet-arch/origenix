@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ORIGENIX — Programas de Autocontrole</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="origenix-pacs.css?v=1.0">
+  <script src="https://unpkg.com/@supabase/supabase-js@2.111.0/dist/umd/supabase.js" data-supabase-version="2.111.0" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="origenix-supabase.js?v=1.0"></script>
+</head>
+<body>
+  <section class="login" id="loginView">
+    <div class="login-card">
+      <div class="brand">ORIGENI<b>X</b></div>
+      <div class="eyebrow eyebrow-spaced">Motor regulatório</div>
+      <h1>Programas de Autocontrole</h1>
+      <p>Entre para configurar, implantar, monitorar e auditar os PACs do estabelecimento.</p>
+      <label for="email">E-mail</label><input id="email" type="email" autocomplete="email" required>
+      <label for="password">Senha</label><input id="password" type="password" autocomplete="current-password" required>
+      <button class="primary login-submit" id="loginButton" type="button">Entrar</button>
+      <div class="login-message" id="loginMessage" role="alert"></div>
+    </div>
+  </section>
+
+  <div class="app hidden" id="app">
+    <header class="top"><div class="top-inner">
+      <div><div class="brand">ORIGENI<b>X</b></div><div class="brand-caption">PAC · APPCC · PPHO · REGISTROS AUDITÁVEIS</div></div>
+      <div class="top-actions">
+        <a class="button" href="origenix-dashboard-v3.html">Dashboard</a>
+        <a class="button" href="origenix-emissao-v3.html">Emissão</a>
+        <button id="logoutButton" type="button">Sair</button>
+      </div>
+    </div></header>
+    <main>
+      <div class="hero">
+        <div><div class="eyebrow">Conformidade baseada em risco</div><h1>Central de Autocontrole</h1><p>Configuração por estabelecimento, atividade, espécie e serviço de inspeção.</p></div>
+        <button id="printButton" type="button">Imprimir relatório</button>
+      </div>
+
+      <section class="controls">
+        <div><label for="company">Estabelecimento</label><select id="company"></select></div>
+        <div><label for="service">Inspeção</label><select id="service"><option>SIF</option><option>SISBI</option><option>SIE</option><option>SIM</option></select></div>
+        <div><label for="activity">Atividade</label><select id="activity"><option value="abate">Abate</option><option value="processamento">Processamento</option><option value="todos">Outros</option></select></div>
+        <div><label for="species">Espécie</label><select id="species"><option value="bovinos">Bovinos</option><option value="bubalinos">Bubalinos</option><option value="suinos">Suínos</option><option value="aves">Aves</option><option value="ovinos">Ovinos</option><option value="caprinos">Caprinos</option><option value="todas">Outras</option></select></div>
+        <button class="primary" id="configureButton" type="button">Configurar PACs</button>
+      </section>
+
+      <section class="stats">
+        <div class="stat"><span>Programas aplicáveis</span><b id="totalStat">0</b></div>
+        <div class="stat"><span>Implantados</span><b id="implementedStat">0</b></div>
+        <div class="stat"><span>Em revisão</span><b id="reviewStat">0</b></div>
+        <div class="stat"><span>Não conformidades abertas</span><b id="ncStat">0</b></div>
+      </section>
+
+      <div class="toolbar"><div><b>Programas do estabelecimento</b><div class="context-caption" id="context"></div></div><input id="search" type="search" placeholder="Buscar PAC..." aria-label="Buscar programa de autocontrole"></div>
+      <section class="grid" id="pacGrid" aria-live="polite"><div class="empty">Selecione um estabelecimento.</div></section>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="ui-enhancements.js?v=4.5"></script>
+  <script src="origenix-pacs.js?v=1.0"></script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ORIGENIX — Recuperar senha</title>
+  <script src="https://unpkg.com/@supabase/supabase-js@2.111.0/dist/umd/supabase.js" data-supabase-version="2.111.0" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="origenix-supabase.js?v=1.0"></script>
+  <link rel="stylesheet" href="recuperar-senha.css?v=1.0">
+</head>
+<body>
+<main>
+  <section id="requestView">
+    <h1>Recuperar senha</h1>
+    <p>Informe seu e-mail. Se existir uma conta, enviaremos um link seguro para criar uma nova senha.</p>
+    <form id="requestForm">
+      <label for="email">E-mail</label>
+      <input id="email" type="email" autocomplete="email" required>
+      <button id="requestButton" type="submit">Enviar link de recuperação</button>
+    </form>
+  </section>
+
+  <section id="updateView" hidden>
+    <h1>Criar nova senha</h1>
+    <p>Use pelo menos 12 caracteres e evite senhas utilizadas em outros serviços.</p>
+    <form id="updateForm">
+      <label for="password">Nova senha</label>
+      <input id="password" type="password" autocomplete="new-password" minlength="12" required>
+      <label for="passwordConfirm">Confirmar nova senha</label>
+      <input id="passwordConfirm" type="password" autocomplete="new-password" minlength="12" required>
+      <button id="updateButton" type="submit">Atualizar senha</button>
+    </form>
+  </section>
+
+  <div id="message" role="status" aria-live="polite"></div>
+  <a id="loginLink" class="login-link" href="origenix-dashboard-v3.html" hidden>Voltar ao login</a>
+</main>
+
+<script src="recuperar-senha.js?v=1.0"></script>
+</body>
+</html>

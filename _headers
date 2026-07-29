@@ -1,0 +1,53 @@
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self' https://kdlyjcaxopypqeitazan.supabase.co wss://kdlyjcaxopypqeitazan.supabase.co; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+  Cross-Origin-Opener-Policy: same-origin
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/origenix-pacs.html
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://unpkg.com; script-src-attr 'none'; style-src 'self' https://fonts.googleapis.com; style-src-attr 'none'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://kdlyjcaxopypqeitazan.supabase.co wss://kdlyjcaxopypqeitazan.supabase.co; frame-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; worker-src 'none'; manifest-src 'self'; upgrade-insecure-requests
+
+/ui-enhancements.js
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/origenix-v4.css
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/origenix-pacs.js
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/origenix-pacs.css
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/origenix-dashboard-v3.html
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://unpkg.com; script-src-attr 'none'; style-src 'self' https://fonts.googleapis.com; style-src-attr 'none'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://kdlyjcaxopypqeitazan.supabase.co wss://kdlyjcaxopypqeitazan.supabase.co; frame-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; worker-src 'none'; manifest-src 'self'; upgrade-insecure-requests
+
+/origenix-dashboard.js
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/origenix-dashboard.css
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/origenix-system.js
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/origenix-system.css
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/origenix-sistema-login.html
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://unpkg.com; script-src-attr 'none'; style-src 'self' https://fonts.googleapis.com; style-src-attr 'none'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://kdlyjcaxopypqeitazan.supabase.co wss://kdlyjcaxopypqeitazan.supabase.co; frame-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; worker-src 'none'; manifest-src 'self'; upgrade-insecure-requests
+
+/origenix-emissao-v3.html
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://unpkg.com; script-src-attr 'none'; style-src 'self' https://fonts.googleapis.com; style-src-attr 'none'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://kdlyjcaxopypqeitazan.supabase.co wss://kdlyjcaxopypqeitazan.supabase.co; frame-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; worker-src 'none'; manifest-src 'self'; upgrade-insecure-requests
+
+/origenix-emissao.js
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/origenix-emissao.css
+  Cache-Control: public, max-age=3600, must-revalidate
