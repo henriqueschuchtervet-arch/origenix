@@ -175,7 +175,8 @@ async function loadDashboard(){
 
 
 function bindDashboardEvents(){
-  document.querySelectorAll('.login-tab').forEach(button => button.addEventListener('click', () => setAuthMode(button.dataset.mode)));
+  document.getElementById('loginModeButton').addEventListener('click', () => setAuthMode('login'));
+  document.getElementById('signupModeButton').addEventListener('click', () => setAuthMode('signup'));
   document.getElementById('btnAuth').addEventListener('click', handleAuth);
   document.getElementById('auth_password').addEventListener('keydown', event => { if(event.key === 'Enter') handleAuth(); });
   document.getElementById('logoutButton').addEventListener('click', handleLogout);
