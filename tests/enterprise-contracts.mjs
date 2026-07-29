@@ -37,6 +37,8 @@ const requiredFiles = [
   "origenix-pacs.css",
   "origenix-pacs.js",
   "recuperar-senha.html",
+  "recuperar-senha.css",
+  "recuperar-senha.js",
   "ui-enhancements.js",
   "origenix-v4.css",
   "_headers",
@@ -55,6 +57,7 @@ contract("arquivos essenciais existem", () => {
 contract("JavaScript compartilhado possui sintaxe válida", () => {
   new vm.Script(files["ui-enhancements.js"], { filename: "ui-enhancements.js" });
   new vm.Script(files["origenix-dashboard.js"], { filename: "origenix-dashboard.js" });
+  new vm.Script(files["recuperar-senha.js"], { filename: "recuperar-senha.js" });
   new vm.Script(files["origenix-pacs.js"], { filename: "origenix-pacs.js" });
 });
 
@@ -71,6 +74,10 @@ contract("JavaScript inline possui sintaxe válida", () => {
 
 contract("recuperação de senha está completa", () => {
   includesAll(files["recuperar-senha.html"], [
+    "recuperar-senha.css?v=1.0",
+    "recuperar-senha.js?v=1.0",
+  ]);
+  includesAll(files["recuperar-senha.js"], [
     "resetPasswordForEmail",
     "PASSWORD_RECOVERY",
     "updateUser",
@@ -219,7 +226,11 @@ contract("botões e links internos possuem comportamento real", () => {
 
   for (const path of htmlFiles) {
     const html = files[path];
-    const pageScript = path === "origenix-pacs.html" ? files["origenix-pacs.js"] : "";
+    const pageScript = ({
+      "origenix-dashboard-v3.html": files["origenix-dashboard.js"],
+      "origenix-pacs.html": files["origenix-pacs.js"],
+      "recuperar-senha.html": files["recuperar-senha.js"],
+    })[path] || "";
     const buttons = [...html.matchAll(/<button\b([^>]*)>/gi)];
     for (const [index, match] of buttons.entries()) {
       const attributes = match[1];
