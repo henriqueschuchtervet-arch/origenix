@@ -373,6 +373,31 @@ modifica dados e mantém a integração atual com Supabase, GitHub e Netlify.
 - Supabase confirmou `authenticated_execute = false` nas três funções internas.
 - Advisor de segurança permaneceu sem novos alertas.
 - GitHub Actions aprovou 25 contratos automatizados.
+
+## Ciclo 17 — exportação segura da auditoria
+
+- A Central ganhou exportação CSV dos filtros atualmente aplicados.
+- A geração é limitada aos 2.000 eventos mais recentes para proteger navegador, banco e rede.
+- Todas as células neutralizam prefixos interpretados como fórmulas por Excel e aplicativos compatíveis.
+- O arquivo utiliza BOM UTF-8, separador compatível com o locale brasileiro e descarte imediato da URL temporária.
+- O botão apresenta loading, sucesso, limite atingido e erros de forma explícita.
+- O download só é liberado depois que a exportação é registrada no banco.
+
+### Rastreabilidade
+
+- Criada a tabela append-only `auditoria_exportacoes`.
+- O usuário pode inserir apenas registros em seu próprio nome e dentro das empresas acessíveis.
+- Somente o próprio usuário ou Administrador consulta os registros de exportação.
+- Um gatilho interno gera o evento `AUDITORIA_EXPORTADA`; sua função não pode ser executada pelo cliente.
+- Exportações globais são visíveis apenas ao autor e a Administradores.
+
+### Verificações
+
+- Policies `SELECT` e `INSERT` confirmadas na tabela de exportações.
+- Privilégios limitados a `SELECT` e `INSERT`; não há atualização, exclusão ou truncamento.
+- Função interna confirmada sem permissão de execução para `authenticated`.
+- Advisor de segurança permaneceu sem novos alertas.
+- GitHub Actions aprovou 26 contratos automatizados.
 - O painel consolida código, UUID, SHA-256, status, empresa, tipo, versão atual e
   data de emissão.
 - A linha do tempo carrega todas as versões permitidas pela RLS, ordenadas da mais
