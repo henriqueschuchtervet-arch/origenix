@@ -108,6 +108,25 @@
   .client-results-meta{display:flex;justify-content:space-between;align-items:center;padding:12px 24px;color:var(--metal);font-family:'Montserrat';font-size:11.5px;border-bottom:1px solid rgba(255,255,255,.05);}
   .client-pagination{display:flex;align-items:center;justify-content:flex-end;gap:12px;padding:16px 24px;border-top:1px solid var(--line);color:var(--metal);font-family:'Montserrat';font-size:11.5px;}
   .client-pagination span{min-width:110px;text-align:center;}
+  .client-detail-overlay{position:fixed;inset:0;background:rgba(0,0,0,.66);backdrop-filter:blur(4px);z-index:140;display:none;justify-content:flex-end;}
+  .client-detail-overlay.show{display:flex;}
+  .client-detail{width:min(560px,100%);height:100%;overflow:auto;background:#101012;border-left:1px solid var(--line);box-shadow:-28px 0 70px rgba(0,0,0,.55);animation:clientDetailIn .22s ease-out;}
+  @keyframes clientDetailIn{from{transform:translateX(24px);opacity:.65}to{transform:none;opacity:1}}
+  .client-detail-head{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;gap:16px;align-items:flex-start;padding:24px;background:rgba(16,16,18,.94);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);}
+  .client-detail-head h2{font:700 19px 'Orbitron';margin:4px 0 0;}
+  .client-detail-close{width:38px;height:38px;border:1px solid var(--line);border-radius:9px;font-size:22px;}
+  .client-detail-body{padding:22px 24px 40px;}
+  .client-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:20px;}
+  .client-detail-field,.client-detail-stat{border:1px solid rgba(255,255,255,.08);background:#161619;border-radius:10px;padding:13px;min-width:0;}
+  .client-detail-field span,.client-detail-stat span{display:block;color:var(--metal);font:600 10px 'Montserrat';text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
+  .client-detail-field b{display:block;overflow-wrap:anywhere;font-size:13px;}
+  .client-detail-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:18px 0;}
+  .client-detail-stat b{font:700 21px 'Orbitron';}
+  .client-detail-section{margin-top:22px;}
+  .client-detail-section h3{font:700 12px 'Montserrat';text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;}
+  .client-detail-doc{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.07);}
+  .client-detail-doc b{display:block;font-size:12.5px;}.client-detail-doc span{color:var(--metal);font-size:11px;}
+  .client-detail-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px;}
   .client-row.archived{opacity:.72;}
   .client-row .status-badge{display:inline-flex;margin-top:7px;padding:3px 8px;border-radius:999px;background:rgba(63,174,106,.12);color:#71d596;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;}
   .client-row.archived .status-badge{background:rgba(169,169,169,.12);color:var(--metal);}
@@ -120,6 +139,8 @@
     .client-row .actions{width:100%;flex-wrap:wrap;}
     .client-row .actions .mini-btn{flex:1;min-width:110px;}
     .client-pagination{justify-content:center;flex-wrap:wrap;padding:14px;}
+    .client-detail-stats{grid-template-columns:repeat(2,1fr);}
+    .client-detail-grid{grid-template-columns:1fr;}
   }
 
   .toast{
@@ -312,6 +333,16 @@
     <button class="print-btn" onclick="window.print()">Imprimir / Salvar PDF</button>
   </div>
   <div id="docContent"></div>
+</div>
+
+<div class="client-detail-overlay" id="clientDetailOverlay" role="presentation" onclick="if(event.target===this) fecharDetalhesCliente()">
+  <aside class="client-detail" role="dialog" aria-modal="true" aria-labelledby="clientDetailTitle">
+    <header class="client-detail-head">
+      <div><div class="eyebrow">Visão 360°</div><h2 id="clientDetailTitle">Estabelecimento</h2></div>
+      <button class="client-detail-close" type="button" onclick="fecharDetalhesCliente()" aria-label="Fechar detalhes">×</button>
+    </header>
+    <div class="client-detail-body" id="clientDetailBody"></div>
+  </aside>
 </div>
 
 <div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 12l5 5L20 6"/></svg><span id="toastMsg"></span></div>
@@ -639,6 +670,7 @@ function renderClientRows(list){
           <small class="status-badge">${c.ativo ? 'Ativo' : 'Arquivado'}</small>
         </div>
         <div class="actions">
+          <button class="mini-btn" onclick="abrirDetalhesCliente('${c.id}')">Ver detalhes</button>
           ${c.ativo ? `<button class="mini-btn edit" onclick="editarCliente('${c.id}')">Editar</button>` : ''}
           ${c.ativo && canCreateDocuments ? `<button class="mini-btn emit" onclick="gerarDocumento('${c.id}')">Gerar documento</button>` : ''}
           ${canDeleteCompanies ? (c.ativo
@@ -665,6 +697,78 @@ async function renderClientList(){
   if(list === null) return;
   renderClientRows(list);
 }
+
+let clientDetailReturnFocus = null;
+
+async function abrirDetalhesCliente(id){
+  const cliente = clientCache.find(item=>item.id===id);
+  if(!cliente){ showToast('Estabelecimento não encontrado. Atualize a lista.', true); return; }
+  clientDetailReturnFocus = document.activeElement;
+  const overlay = document.getElementById('clientDetailOverlay');
+  const title = document.getElementById('clientDetailTitle');
+  const body = document.getElementById('clientDetailBody');
+  title.textContent = cliente.nome;
+  body.innerHTML = '<div class="empty-state">Carregando visão consolidada...</div>';
+  overlay.classList.add('show');
+  document.body.style.overflow = 'hidden';
+  overlay.querySelector('.client-detail-close').focus();
+
+  const countQuery = table => supa.from(table).select('id', { count:'exact', head:true }).eq('empresa_id', id);
+  const [docsResult, pacsResult, tasksResult, auditsResult, recentDocsResult] = await Promise.all([
+    countQuery('documentos'),
+    countQuery('empresa_pacs'),
+    countQuery('tarefas'),
+    countQuery('auditorias'),
+    supa.from('documentos').select('id,titulo,tipo,status,codigo,versao,criado_em,created_at').eq('empresa_id', id).order('criado_em', { ascending:false, nullsFirst:false }).limit(5)
+  ]);
+  if(!overlay.classList.contains('show') || document.getElementById('clientDetailTitle').textContent !== cliente.nome) return;
+  const count = result => result.error ? '—' : (result.count || 0);
+  const docs = recentDocsResult.error ? [] : (recentDocsResult.data || []);
+  const fields = [
+    ['CNPJ', cliente.cnpj || 'Não informado'],
+    ['Município', cliente.municipio || 'Não informado'],
+    ['Categoria', cliente.tipo_estabelecimento || 'Não informado'],
+    ['Inspeção', cliente.inspecao || 'Não informada'],
+    ['Responsável técnico', cliente.rt_nome || 'Não informado'],
+    ['CRMV', cliente.rt_crmv || 'Não informado'],
+    ['Capacidade', cliente.capacidade || 'Não informada'],
+    ['Área construída', cliente.area || 'Não informada']
+  ];
+  body.innerHTML = `
+    <div class="client-detail-grid">
+      ${fields.map(([label,value])=>`<div class="client-detail-field"><span>${escapeHtml(label)}</span><b>${escapeHtml(value)}</b></div>`).join('')}
+    </div>
+    <div class="client-detail-stats" aria-label="Indicadores do estabelecimento">
+      <div class="client-detail-stat"><span>Documentos</span><b>${count(docsResult)}</b></div>
+      <div class="client-detail-stat"><span>PACs</span><b>${count(pacsResult)}</b></div>
+      <div class="client-detail-stat"><span>Tarefas</span><b>${count(tasksResult)}</b></div>
+      <div class="client-detail-stat"><span>Auditorias</span><b>${count(auditsResult)}</b></div>
+    </div>
+    <section class="client-detail-section">
+      <h3>Documentos recentes</h3>
+      ${docs.length ? docs.map(doc=>`<div class="client-detail-doc"><div><b>${escapeHtml(doc.titulo||doc.tipo||'Documento')}</b><span>${escapeHtml(doc.codigo||'Sem código')} · ${escapeHtml(doc.versao||'v1.0')}</span></div><span>${escapeHtml(doc.status||'gerado')}</span></div>`).join('') : '<div class="empty-state" style="padding:24px 0">Nenhum documento emitido.</div>'}
+    </section>
+    <div class="client-detail-actions">
+      ${cliente.ativo ? `<button class="mini-btn edit" onclick="fecharDetalhesCliente();editarCliente('${cliente.id}')">Editar cadastro</button>` : ''}
+      ${cliente.ativo && canCreateDocuments ? `<button class="mini-btn emit" onclick="fecharDetalhesCliente();gerarDocumento('${cliente.id}')">Gerar documento</button>` : ''}
+      <button class="mini-btn" onclick="location.href='origenix-pacs.html?empresa=${encodeURIComponent(cliente.id)}'">Abrir PACs</button>
+    </div>`;
+}
+
+function fecharDetalhesCliente(){
+  const overlay = document.getElementById('clientDetailOverlay');
+  overlay.classList.remove('show');
+  document.body.style.overflow = '';
+  if(clientDetailReturnFocus instanceof HTMLElement) clientDetailReturnFocus.focus();
+  clientDetailReturnFocus = null;
+}
+
+document.addEventListener('keydown', event=>{
+  if(event.key === 'Escape' && document.getElementById('clientDetailOverlay')?.classList.contains('show')){
+    event.preventDefault();
+    fecharDetalhesCliente();
+  }
+});
 
 async function alterarSituacaoCliente(id, restaurar){
   const cliente = clientCache.find(item=>item.id===id);
