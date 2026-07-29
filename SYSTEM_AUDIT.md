@@ -595,3 +595,35 @@ modifica dados e mantém a integração atual com Supabase, GitHub e Netlify.
 - Dashboard e sistema alternaram entre Entrar e Criar Conta.
 - Recuperação de senha permaneceu disponível.
 - Tela de emissão manteve o fluxo de autenticação.
+
+## Ciclo 24 — serviço compartilhado de autenticação
+
+### Diagnóstico
+
+- Dashboard, emissão e sistema repetiam validação de credenciais, mensagens, login, cadastro, sessão e logout.
+- As regras específicas de interface representavam apenas uma pequena parte de cada fluxo.
+
+### Implementação
+
+- Criado `origenix-auth.js` com validação, normalização de e-mail, mensagens e operações Auth.
+- Login e cadastro compartilham tratamento de indisponibilidade, rede e erros do Supabase.
+- A observação da sessão mantém `setTimeout` no callback para evitar trabalho assíncrono dentro do evento Auth.
+- Cada página preserva seus callbacks `onAuthenticated`, painéis, permissões e carregamentos próprios.
+- O dashboard preserva o redirecionamento de confirmação de e-mail.
+- Logout utiliza uma operação compartilhada com retorno explícito de erro.
+
+### Garantias de regressão
+
+- O contrato exige o serviço compartilhado e proíbe chamadas Auth duplicadas nas três páginas.
+- Uma substituição inicial removeu acidentalmente rotas após um logout compacto.
+- Os contratos identificaram imediatamente a ausência das rotas de tarefas, auditoria e notificações.
+- O sistema foi restaurado a partir do ciclo anterior e a transformação foi refeita com análise segura de blocos.
+
+### Verificações
+
+- 36 contratos enterprise aprovados no GitHub Actions.
+- Rotas iniciais, tarefas, auditoria e notificações permanecem no sistema.
+- Dashboard, sistema e emissão exibiram mensagens corretas para credenciais inválidas.
+- O foco foi direcionado ao campo com erro.
+- Botões retornaram ao estado habilitado e ao texto original.
+- Nenhuma conta ou sessão real foi criada durante os testes.
