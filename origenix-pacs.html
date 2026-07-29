@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@700;800&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="origenix-supabase.js?v=1.0"></script>
   <style>
     :root{--bg:#080809;--panel:#121214;--panel2:#19191c;--line:#323237;--text:#f6f6f7;--muted:#9b9ba3;--red:#f12525;--green:#36b56b;--amber:#e4a02b}
     *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-serif}
@@ -87,7 +88,7 @@
   <div class="toast" id="toast" role="status"></div>
 
   <script>
-    const sb = window.supabase.createClient('https://kdlyjcaxopypqeitazan.supabase.co','sb_publishable_WPAmKMxTATKGybLe9FBs1Q_X417Hc5X');
+    const sb = window.OrigenixSupabase.createClient();
     let user=null, role='cliente', models=[], companyPacs=[], openNc=0;
     const $=id=>document.getElementById(id);
     function toast(message){$('toast').textContent=message;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),2600)}
