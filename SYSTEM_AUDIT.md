@@ -562,3 +562,36 @@ modifica dados e mantém a integração atual com Supabase, GitHub e Netlify.
 - Nenhuma ocorrência de `data:image/` permaneceu nas quatro páginas.
 - Assets carregaram no preview da Netlify com dimensões válidas.
 - Login do dashboard e do sistema continuou com ações abaixo de `#btnAuth`.
+
+## Ciclo 23 — configuração Supabase modular
+
+### Diagnóstico
+
+- Seis páginas repetiam a mesma URL, chave publicável e inicialização do cliente Supabase.
+- Mudanças de projeto ou rotação da chave exigiriam alterações em seis pontos.
+- As páginas não compartilhavam uma validação única para indisponibilidade da biblioteca.
+
+### Implementação
+
+- Criado `origenix-supabase.js` como fonte única da configuração pública.
+- O módulo valida a presença da fábrica Supabase antes de criar cada cliente.
+- A API compartilhada é imutável por meio de `Object.freeze`.
+- Cada página continua criando seu próprio cliente, preservando isolamento de sessão e comportamento.
+- Página inicial, dashboard, emissão, sistema, PACs e recuperação de senha foram integrados.
+- O módulo recebeu política explícita de cache com revalidação.
+
+### Segurança e manutenção
+
+- URL e chave publicável foram removidas de todos os HTMLs.
+- Nenhuma service role ou credencial privada foi introduzida.
+- RLS, policies, tabelas, dados e chamadas de autenticação não foram alterados.
+- Um contrato impede que páginas voltem a inicializar o cliente diretamente.
+
+### Verificações
+
+- 35 contratos enterprise aprovados no GitHub Actions.
+- As seis páginas carregaram `origenix-supabase.js?v=1.0` no preview da Netlify.
+- Página inicial abriu o diagnóstico normalmente.
+- Dashboard e sistema alternaram entre Entrar e Criar Conta.
+- Recuperação de senha permaneceu disponível.
+- Tela de emissão manteve o fluxo de autenticação.
