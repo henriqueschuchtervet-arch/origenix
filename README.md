@@ -91,3 +91,12 @@ PACs, acessibilidade e sequência de migrations.
 O workflow `Enterprise contracts` executa automaticamente na branch principal,
 na branch de desenvolvimento e nos pull requests. Um PR não deve ser liberado
 enquanto essa verificação estiver falhando.
+
+## Segurança da hospedagem
+
+Os cabeçalhos HTTP da Netlify estão versionados em `_headers`. A configuração
+inclui CSP, proteção contra clickjacking, `nosniff`, política de referência,
+restrição de permissões do navegador, isolamento de contexto e HSTS.
+
+Qualquer nova integração externa deve ser adicionada à Content Security Policy de
+forma explícita e acompanhada por atualização dos contratos automatizados.
