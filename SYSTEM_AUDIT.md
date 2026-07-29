@@ -225,3 +225,20 @@ modifica dados e mantém a integração atual com Supabase, GitHub e Netlify.
   `:focus-visible` no CSS compartilhado.
 - A execução final aprovou 13 de 13 contratos em oito segundos, sem aviso de
   runtime obsoleto.
+
+## Cabeçalhos de segurança da hospedagem
+
+- O arquivo `_headers` versiona a política aplicada pela Netlify em todas as
+  páginas.
+- A Content Security Policy limita scripts, estilos, fontes, imagens e conexões
+  às origens necessárias para a aplicação e o Supabase.
+- `frame-ancestors 'none'` e `X-Frame-Options: DENY` reduzem risco de clickjacking.
+- MIME sniffing, vazamento de referência, APIs sensíveis do navegador e abertura
+  de contexto entre origens foram restringidos.
+- HSTS é aplicado por um ano, incluindo subdomínios.
+- HTML permanece sem cache persistente; JavaScript e CSS compartilhados possuem
+  revalidação horária.
+- O contrato automatizado passou a cobrir os cabeçalhos: 14 de 14 contratos
+  aprovados.
+- A verificação `Header rules` da Netlify foi concluída com sucesso e o preview
+  foi publicado.
