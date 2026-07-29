@@ -225,7 +225,11 @@
   function enhanceAuth() {
     const password = $('input[type="password"]');
     if (!password || $(".ox-auth-actions")) return;
-    const loginButton = $$("button").find((button) => button.textContent.trim().toLowerCase() === "entrar");
+    const loginButton = $("#btnAuth")
+      || $$("button").find((button) =>
+        button.textContent.trim().toLowerCase() === "entrar"
+        && !button.classList.contains("login-tab")
+      );
     if (!loginButton) return;
     const actions = document.createElement("div");
     actions.className = "ox-auth-actions";
