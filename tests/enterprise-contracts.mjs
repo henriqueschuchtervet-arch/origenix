@@ -242,6 +242,8 @@ contract("botões e links internos possuem comportamento real", () => {
         html.includes(`getElementById('${id}')`)
         || html.includes(`getElementById("${id}")`)
         || new RegExp(`\\$\\(['"]${id}['"]\\)`).test(html)
+        || pageScript.includes(`getElementById('${id}')`)
+        || pageScript.includes(`getElementById("${id}")`)
         || new RegExp(`\\$\\(["']${id}["']\\)`).test(pageScript)
       );
       const enhancedBySharedUi = ariaLabel
