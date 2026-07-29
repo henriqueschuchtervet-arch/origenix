@@ -526,6 +526,23 @@ contract("autenticação compartilha superfície visual sem sobrepor abas", () =
   ]);
 });
 
+contract("marcas são assets compartilhados e cacheáveis", () => {
+  const optimizedPages = [
+    "index.html",
+    "origenix-dashboard-v3.html",
+    "origenix-emissao-v3.html",
+    "origenix-sistema-login.html",
+  ];
+  optimizedPages.forEach((path) => {
+    assert.ok(!files[path].includes("data:image/"), `${path} ainda contém imagem Base64 embutida`);
+    assert.ok(files[path].includes("assets/origenix-"), `${path} não usa asset compartilhado`);
+  });
+  includesAll(files["_headers"], [
+    "/assets/*",
+    "Cache-Control: public, max-age=31536000, immutable",
+  ]);
+});
+
 const failures = results.filter((result) => !result.ok);
 for (const result of results) {
   console.log(`${result.ok ? "✓" : "✗"} ${result.name}${result.error ? ` — ${result.error}` : ""}`);
