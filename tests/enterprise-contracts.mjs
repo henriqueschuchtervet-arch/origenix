@@ -35,6 +35,7 @@ const requiredFiles = [
   "recuperar-senha.html",
   "ui-enhancements.js",
   "origenix-v4.css",
+  "_headers",
   "README.md",
   "SYSTEM_AUDIT.md",
 ];
@@ -160,6 +161,19 @@ contract("tabela legada de usuários permanece bloqueada", () => {
     "revoke all on table public.usuarios from anon, authenticated",
     "using (false)",
     "with check (false)",
+  ]);
+});
+
+contract("Netlify aplica cabeçalhos de segurança", () => {
+  includesAll(files["_headers"], [
+    "Content-Security-Policy:",
+    "frame-ancestors 'none'",
+    "object-src 'none'",
+    "X-Content-Type-Options: nosniff",
+    "X-Frame-Options: DENY",
+    "Referrer-Policy: strict-origin-when-cross-origin",
+    "Permissions-Policy:",
+    "Strict-Transport-Security:",
   ]);
 });
 
