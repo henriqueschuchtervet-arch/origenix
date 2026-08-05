@@ -6,7 +6,7 @@
 <title>ORIGENIX — Consultoria Veterinária Regulatória e Sanitária</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800&family=Inter:wght@400;500;600&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2.111.0/dist/umd/supabase.js"></script>
 <style>
   :root{
     --black:#000000; --black-2:#0b0b0b; --graphite:#171717; --graphite-2:#1f1f1f;
@@ -177,21 +177,21 @@
   <div class="wrap hero-inner">
     <div class="eyebrow"><div class="rule"></div><span>Consultoria · Inspeção Sanitária · Tecnologia</span></div>
     <h1>Consultoria Veterinária <span class="hl">Regulatória</span>, Sanitária e Industrial</h1>
-    <p class="lede">Transformamos conformidade sanitária em crescimento empresarial — da triagem à documentação assinada, dentro de um único ecossistema inteligente.</p>
+    <p class="lede">Transformamos conformidade sanitária em gestão empresarial — da triagem à documentação técnica versionada, dentro de um único ecossistema.</p>
     <div class="hero-actions">
-      <a href="#" class="btn-red" onclick="openLeadModal();return false;">Solicitar Diagnóstico</a>
-      <a href="#" class="btn-outline" onclick="openLeadModal();return false;">Falar com Especialista</a>
+      <a href="#leadModal" class="btn-red" onclick="openLeadModal();return false;">Solicitar Diagnóstico</a>
+      <a href="#leadModal" class="btn-outline" onclick="openLeadModal();return false;">Falar com Especialista</a>
     </div>
   </div>
 
   <div class="wrap">
     <div class="metrics glass">
       <div class="metrics-grid">
-        <div class="metric"><div class="num"><span class="r">240</span>+</div><div class="lbl">Estabelecimentos atendidos</div></div>
-        <div class="metric"><div class="num"><span class="r">180</span>+</div><div class="lbl">Processos conduzidos</div></div>
-        <div class="metric"><div class="num"><span class="r">1.4</span>K</div><div class="lbl">Documentos emitidos</div></div>
-        <div class="metric"><div class="num"><span class="r">95</span>+</div><div class="lbl">Inspeções acompanhadas</div></div>
-        <div class="metric"><div class="num"><span class="r">12</span></div><div class="lbl">Estados atendidos</div></div>
+        <div class="metric"><div class="num"><span class="r">01</span></div><div class="lbl">Gestão por estabelecimento</div></div>
+        <div class="metric"><div class="num"><span class="r">02</span></div><div class="lbl">Projetos sanitários</div></div>
+        <div class="metric"><div class="num"><span class="r">03</span></div><div class="lbl">Documentos versionados</div></div>
+        <div class="metric"><div class="num"><span class="r">04</span></div><div class="lbl">Licenças e auditorias</div></div>
+        <div class="metric"><div class="num"><span class="r">05</span></div><div class="lbl">Acesso por perfil</div></div>
       </div>
     </div>
   </div>
@@ -235,8 +235,8 @@
     <div class="diff-grid">
       <div class="diff glass">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 2a5 5 0 015 5v2a5 5 0 01-10 0V7a5 5 0 015-5z"/><path d="M8 14v2a4 4 0 004 4 4 4 0 004-4v-2M12 20v2"/></svg>
-        <h3>IA proprietária</h3>
-        <p>Agente interno treinado em legislação sanitária que conduz entrevistas, sugere adequações e elabora rascunhos técnicos.</p>
+        <h3>Assistente técnico</h3>
+        <p>Módulo de apoio regulatório em desenvolvimento. Não há respostas simuladas nem credenciais de IA expostas no navegador.</p>
       </div>
       <div class="diff glass">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="4" y="4" width="16" height="16" rx="1"/><path d="M4 10h16M10 4v16"/></svg>
@@ -250,8 +250,8 @@
       </div>
       <div class="diff glass">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 2l8 4v6c0 5-3.4 8-8 10-4.6-2-8-5-8-10V6z"/></svg>
-        <h3>Segurança jurídica</h3>
-        <p>Documentos assinados digitalmente pelo RT, com validação pública independente da plataforma.</p>
+        <h3>Controle de autoria</h3>
+        <p>Emissões versionadas e aprovações internas rastreáveis. Assinatura ICP-Brasil não é anunciada como recurso ativo.</p>
       </div>
       <div class="diff glass">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="9" cy="7" r="3"/><path d="M2 21v-1a6 6 0 016-6h2a6 6 0 016 6v1"/><path d="M17 8a3 3 0 100-6M22 21v-1a5.5 5.5 0 00-4-5.3"/></svg>
@@ -277,21 +277,21 @@
         <li><b>Projetos ativos</b> — status de cada estabelecimento em regularização.</li>
         <li><b>Cronograma</b> — próximas etapas e prazos regulatórios.</li>
         <li><b>Documentos e laudos</b> — biblioteca completa, sempre na versão vigente.</li>
-        <li><b>Licenças e ARTs</b> — vencimentos com alerta automático.</li>
+        <li><b>Licenças e ARTs</b> — vencimentos destacados visualmente no painel.</li>
       </ul>
     </div>
 
     <div class="panel glass">
       <div class="panel-top">
-        <span class="label">ÁREA DO CLIENTE · FRIGORÍFICO VALE FORTE</span>
-        <span class="status">ATIVO</span>
+        <span class="label">ÁREA DO CLIENTE · EXEMPLO DE INTERFACE</span>
+        <span class="status">VISÃO GERAL</span>
       </div>
       <div class="panel-body">
-        <div class="panel-row"><span class="k">Projeto</span><span class="v">Regularização SIF</span></div>
-        <div class="panel-row"><span class="k">Etapa atual</span><span class="v">Pasta 05 — Autocontrole</span></div>
-        <div class="panel-row"><span class="k">Próximo vencimento</span><span class="v">ART · 14/07/2026</span></div>
-        <div class="panel-row"><span class="k">Documentos pendentes</span><span class="v"><span class="tag-open">2 EM ABERTO</span></span></div>
-        <div class="panel-row"><span class="k">Última inspeção</span><span class="v">18/06/2026 — sem NC</span></div>
+        <div class="panel-row"><span class="k">Projeto</span><span class="v">Dados reais do estabelecimento</span></div>
+        <div class="panel-row"><span class="k">Etapa atual</span><span class="v">Status e progresso registrados</span></div>
+        <div class="panel-row"><span class="k">Próximo vencimento</span><span class="v">Licenças vinculadas</span></div>
+        <div class="panel-row"><span class="k">Documentos</span><span class="v"><span class="tag-open">POR PERMISSÃO</span></span></div>
+        <div class="panel-row"><span class="k">Auditorias</span><span class="v">Histórico do estabelecimento</span></div>
       </div>
     </div>
   </div>
@@ -300,13 +300,13 @@
 <section class="tech">
   <div class="wrap">
     <div class="rule"></div>
-    <h2>Website, CRM, ERP regulatório, sistema documental e IA — uma base só, um login só</h2>
+    <h2>Website, CRM, gestão regulatória e documentos — uma base só, um acesso controlado</h2>
     <div class="tech-modules">
       <div class="mod glass">WEBSITE</div>
       <div class="mod glass">CRM</div>
       <div class="mod glass">ERP REGULATÓRIO</div>
       <div class="mod glass">DOCUMENTOS</div>
-      <div class="mod glass">IA INTERNA</div>
+      <div class="mod glass">IA · EM DESENVOLVIMENTO</div>
       <div class="mod glass">PAINEL ADMIN</div>
     </div>
   </div>
@@ -317,8 +317,8 @@
     <h2>Comece pelo diagnóstico. O resto o ORIGENIX conduz com você.</h2>
     <p>Agende uma conversa com um especialista e veja o processo do seu estabelecimento.</p>
     <div class="hero-actions">
-      <a href="#" class="btn-red" onclick="openLeadModal();return false;">Solicitar Diagnóstico</a>
-      <a href="#" class="btn-outline" onclick="openLeadModal();return false;">Falar com Especialista</a>
+      <a href="#leadModal" class="btn-red" onclick="openLeadModal();return false;">Solicitar Diagnóstico</a>
+      <a href="#leadModal" class="btn-outline" onclick="openLeadModal();return false;">Falar com Especialista</a>
     </div>
   </div>
 </section>
@@ -327,7 +327,7 @@
   <div class="wrap">
     <div style="display:flex;align-items:center;gap:8px;font-family:'Orbitron';font-size:14px;font-weight:800;">ORIGENI<span style="color:#ff1a1a;">X</span></div>
     <span>Consultoria veterinária regulatória, sanitária e industrial</span>
-    <a href="origenix-dashboard-v3.html" style="font-family:'Montserrat';font-size:12px;color:var(--metal);border:1px solid var(--glass-line);padding:8px 16px;border-radius:8px;transition:.2s;">Área Restrita</a>
+    <a href="origenix-sistema-login.html" style="font-family:'Montserrat';font-size:12px;color:var(--metal);border:1px solid var(--glass-line);padding:8px 16px;border-radius:8px;transition:.2s;">Área Restrita</a>
   </div>
 </footer>
 
@@ -335,7 +335,7 @@
   <div class="modal-card">
     <div class="modal-head">
       <h3>Solicitar Diagnóstico</h3>
-      <button class="modal-close" onclick="closeLeadModal()">
+      <button class="modal-close" type="button" aria-label="Fechar" onclick="closeLeadModal()">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
       </button>
     </div>
@@ -353,7 +353,7 @@
         </select>
       </div>
       <div class="m-field"><label>Mensagem (opcional)</label><textarea id="lead_mensagem" placeholder="Conte um pouco sobre sua necessidade..."></textarea></div>
-      <button class="btn-red modal-submit" id="btnLeadSubmit" onclick="enviarLead()">Enviar Solicitação</button>
+      <button class="btn-red modal-submit" type="button" id="btnLeadSubmit" onclick="enviarLead()">Enviar Solicitação</button>
       <div class="modal-msg" id="leadMsg"></div>
     </div>
     <div class="modal-success" id="modalSuccess">
@@ -393,7 +393,13 @@
   async function enviarLead(){
     const nome = document.getElementById('lead_nome').value.trim();
     const empresa = document.getElementById('lead_empresa').value.trim();
-    if(!nome){ setLeadMsg('Informe seu nome.', 'error'); return; }
+    const email = document.getElementById('lead_email').value.trim().toLowerCase();
+    const telefone = document.getElementById('lead_telefone').value.trim();
+    if(nome.length < 2){ setLeadMsg('Informe seu nome.', 'error'); return; }
+    if(!email && !telefone){ setLeadMsg('Informe um e-mail ou telefone para contato.', 'error'); return; }
+    if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ setLeadMsg('Informe um e-mail válido.', 'error'); return; }
+    const lastLead = Number(sessionStorage.getItem('origenix-last-lead') || 0);
+    if(Date.now() - lastLead < 60000){ setLeadMsg('Aguarde um minuto antes de enviar novamente.', 'error'); return; }
     if(!leadSupa){ setLeadMsg('Erro de conexão. Verifique sua internet.', 'error'); return; }
 
     const btn = document.getElementById('btnLeadSubmit');
@@ -403,10 +409,12 @@
     const registro = {
       nome,
       empresa: empresa || null,
-      telefone: document.getElementById('lead_telefone').value.trim() || null,
-      email: document.getElementById('lead_email').value.trim() || null,
+      telefone: telefone || null,
+      email: email || null,
       tipo_estabelecimento: document.getElementById('lead_tipo').value || null,
-      mensagem: document.getElementById('lead_mensagem').value.trim() || null
+      mensagem: document.getElementById('lead_mensagem').value.trim().slice(0, 4000) || null,
+      origem: 'landing_page',
+      status: 'novo'
     };
 
     const { error } = await leadSupa.from('leads').insert(registro);
@@ -418,6 +426,7 @@
       return;
     }
 
+    sessionStorage.setItem('origenix-last-lead', String(Date.now()));
     document.getElementById('modalFormWrap').style.display = 'none';
     document.getElementById('modalSuccess').classList.add('show');
   }
