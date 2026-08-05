@@ -1,0 +1,58 @@
+[build]
+  publish = "."
+  command = "npm test"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+[[redirects]]
+  from = "/area-restrita"
+  to = "/origenix-sistema-login.html"
+  status = 302
+
+[[redirects]]
+  from = "/origenix-dashboard-v3"
+  to = "/origenix-dashboard-v3.html"
+  status = 200
+
+[[redirects]]
+  from = "/origenix-emissao-v3"
+  to = "/origenix-emissao-v3.html"
+  status = 200
+
+[[redirects]]
+  from = "/origenix-sistema-login"
+  to = "/origenix-sistema-login.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://kdlyjcaxopypqeitazan.supabase.co wss://kdlyjcaxopypqeitazan.supabase.co; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests"
+    Cross-Origin-Opener-Policy = "same-origin"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/origenix-dashboard-v3.html"
+  [headers.values]
+    Cache-Control = "no-store"
+    X-Robots-Tag = "noindex, nofollow"
+[[headers]]
+  for = "/origenix-emissao-v3.html"
+  [headers.values]
+    Cache-Control = "no-store"
+    X-Robots-Tag = "noindex, nofollow"
+
+[[headers]]
+  for = "/origenix-sistema-login.html"
+  [headers.values]
+    Cache-Control = "no-store"
+    X-Robots-Tag = "noindex, nofollow"

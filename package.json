@@ -1,0 +1,12 @@
+{
+  "name": "origenix",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Plataforma de gestão regulatória ORIGENIX",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
