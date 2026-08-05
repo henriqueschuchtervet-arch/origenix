@@ -12,6 +12,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   let currentRecords = [];
   let editingId = null;
   let lookups = { empresas: [], rts: [] };
+  let currentPage = 1;
+  let sortState = { key: null, direction: "asc" };
+  let previousFocus = null;
+  const uiReview = ["localhost", "127.0.0.1"].includes(window.location.hostname)
+    && new URLSearchParams(window.location.search).get("ui-review") === "1";
 
   const roleLabel = {
     admin: "Administrador",
@@ -191,7 +196,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const days = Math.ceil((new Date(`${value}T23:59:59`) - new Date()) / 86_400_000);
     const label = app.formatDate(value);
     if (days < 0) return `<span class="danger-text">${label} · vencida</span>`;
-    if (days <= 30) return `<span style="color:var(--amber)">${label} · ${days}d</span>`;
+    if (days <= 30) return `<span class="warning-text">${label} · ${days}d</span>`;
     return label;
   }
 
@@ -215,41 +220,83 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   async function renderOverview() {
     setPageTitle("Visão geral");
-    content.innerHTML = `<div class="loading">Carregando indicadores reais...</div>`;
-    const count = (table, filter) => {
+    content.innerHTML = `<div class="loading"><div class="skeleton-lines"><i></i><i></i><i></i></div><span>Carregando indicadores reais...</span></div>`;
+    const count = (table, configure) => {
       let query = app.client.from(table).select("id", { count: "exact", head: true });
-      if (filter) query = query.eq(filter.column, filter.value);
+      if (configure) query = configure(query);
       return query;
     };
     try {
-      const [empresas, projetos, documentos, licencas, recentProjects, dueLicenses] = await Promise.all([
-        count("empresas", { column: "ativo", value: true }), count("projetos"), count("documentos"), count("licencas"),
+      const today = new Date().toISOString().slice(0, 10);
+      const nextThirtyDays = new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10);
+      const [empresas, projetos, documentos, licencas, auditorias, pendencias, recentProjects, dueLicenses, recentDocuments, recentCompanies] = await Promise.all([
+        count("empresas", (query) => query.eq("ativo", true)),
+        count("projetos", (query) => query.eq("status", "em_andamento")),
+        count("documentos", (query) => query.eq("status", "rascunho")),
+        count("licencas", (query) => query.gte("data_vencimento", today).lte("data_vencimento", nextThirtyDays)),
+        count("auditorias", (query) => query.in("status", ["planejada", "em_execucao"])),
+        count("projetos", (query) => query.eq("status", "pausado")),
         app.client.from("projetos").select("id,titulo,status,progresso,atualizado_em,empresas(nome)").order("atualizado_em", { ascending: false }).limit(5),
         app.client.from("licencas").select("id,tipo,data_vencimento,status,empresas(nome)").not("data_vencimento", "is", null).order("data_vencimento").limit(5),
+        app.client.from("documentos").select("id,titulo,status,versao,atualizado_em,empresas(nome)").order("atualizado_em", { ascending: false }).limit(4),
+        app.client.from("empresas").select("id,nome,municipio,estado,inspecao,criado_em").order("criado_em", { ascending: false }).limit(4),
       ]);
-      const firstError = [empresas, projetos, documentos, licencas, recentProjects, dueLicenses].find((result) => result.error)?.error;
+      const results = [empresas, projetos, documentos, licencas, auditorias, pendencias, recentProjects, dueLicenses, recentDocuments, recentCompanies];
+      const firstError = results.find((result) => result.error)?.error;
       if (firstError) throw firstError;
-      const projectRows = (recentProjects.data || []).map((item) => `<tr><td>${safeValue(item.titulo)}</td><td>${safeValue(item.empresas?.nome)}</td><td>${statusBadge(item.status)}</td><td>${Number(item.progresso) || 0}%</td></tr>`).join("");
-      const licenseRows = (dueLicenses.data || []).map((item) => `<tr><td>${safeValue(item.tipo)}</td><td>${safeValue(item.empresas?.nome)}</td><td>${dueDate(item.data_vencimento)}</td></tr>`).join("");
+      const projectRows = (recentProjects.data || []).map((item) => `<tr><td data-label="Projeto">${safeValue(item.titulo)}</td><td data-label="Estabelecimento">${safeValue(item.empresas?.nome)}</td><td data-label="Status">${statusBadge(item.status)}</td><td data-label="Progresso">${Number(item.progresso) || 0}%</td></tr>`).join("");
+      const licenseRows = (dueLicenses.data || []).map((item) => `<tr><td data-label="Tipo">${safeValue(item.tipo)}</td><td data-label="Estabelecimento">${safeValue(item.empresas?.nome)}</td><td data-label="Vencimento">${dueDate(item.data_vencimento)}</td></tr>`).join("");
+      const documentActivity = (recentDocuments.data || []).map((item) => `<div class="activity-item"><span class="activity-mark">DOC</span><div><strong>${safeValue(item.titulo)}</strong><small>${safeValue(item.empresas?.nome)} · ${safeValue(item.versao || "v0")}</small></div><span>${app.formatDate(item.atualizado_em)}</span></div>`).join("");
+      const companyActivity = (recentCompanies.data || []).map((item) => `<div class="activity-item"><span class="activity-mark">EMP</span><div><strong>${safeValue(item.nome)}</strong><small>${safeValue([item.municipio, item.estado].filter(Boolean).join(" / "))} · ${safeValue(item.inspecao)}</small></div><span>${app.formatDate(item.criado_em)}</span></div>`).join("");
       content.innerHTML = `
-        <header class="page-head"><div><span class="eyebrow">Operação em tempo real</span><h1>Visão geral</h1><p>Indicadores calculados a partir dos registros permitidos ao seu perfil.</p></div></header>
+        <header class="page-head"><div><span class="eyebrow">Centro de comando regulatório</span><h1>Visão geral</h1><p>Indicadores calculados a partir dos registros permitidos ao seu perfil — sem valores simulados.</p></div><div class="page-context"><i></i> Dados sincronizados</div></header>
         <div class="stat-grid">
-          ${statCard("Estabelecimentos ativos", empresas.count)}
-          ${statCard("Projetos", projetos.count)}
-          ${statCard("Documentos", documentos.count)}
-          ${statCard("Licenças e ARTs", licencas.count)}
+          ${statCard("Estabelecimentos ativos", empresas.count, "01", "Base operacional")}
+          ${statCard("Projetos em andamento", projetos.count, "02", "Execução técnica")}
+          ${statCard("Documentos pendentes", documentos.count, "03", "Rascunhos")}
+          ${statCard("Licenças a vencer", licencas.count, "04", "Próximos 30 dias")}
+          ${statCard("Auditorias abertas", auditorias.count, "05", "Planejadas ou em curso")}
+          ${statCard("Pendências", pendencias.count, "06", "Projetos pausados")}
         </div>
         <div class="panel-grid">
-          <section class="panel-card"><div class="panel-head"><h2>Projetos recentes</h2><button class="button button-small" data-go="projetos">Ver todos</button></div>${miniTable(["Projeto","Estabelecimento","Status","Progresso"], projectRows, "Nenhum projeto acessível.")}</section>
-          <section class="panel-card"><div class="panel-head"><h2>Próximos vencimentos</h2><button class="button button-small" data-go="licencas">Ver todos</button></div>${miniTable(["Tipo","Estabelecimento","Vencimento"], licenseRows, "Nenhum vencimento registrado.")}</section>
+          <section class="panel-card"><div class="panel-head"><div><span class="panel-kicker">EXECUÇÃO</span><h2>Projetos recentes</h2><p>Andamento das frentes técnicas visíveis.</p></div><button class="button button-small" data-go="projetos">Ver todos</button></div>${miniTable(["Projeto","Estabelecimento","Status","Progresso"], projectRows, "Nenhum projeto acessível.")}</section>
+          <section class="panel-card"><div class="panel-head"><div><span class="panel-kicker">AGENDA REGULATÓRIA</span><h2>Próximos vencimentos</h2><p>Licenças e ARTs ordenadas por data.</p></div><button class="button button-small" data-go="licencas">Ver todos</button></div>${miniTable(["Tipo","Estabelecimento","Vencimento"], licenseRows, "Nenhum vencimento registrado.")}</section>
+        </div>
+        <div class="panel-grid panel-grid-wide">
+          <section class="panel-card"><div class="panel-head"><div><span class="panel-kicker">ATIVIDADE</span><h2>Documentos recentes</h2></div><button class="button button-small" data-go="documentos">Abrir acervo</button></div><div class="activity-list">${documentActivity || `<div class="empty"><strong>Nenhum documento recente.</strong></div>`}</div></section>
+          <section class="panel-card"><div class="panel-head"><div><span class="panel-kicker">ESTRUTURA</span><h2>Empresas recentes</h2></div><button class="button button-small" data-go="empresas">Ver empresas</button></div><div class="activity-list">${companyActivity || `<div class="empty"><strong>Nenhuma empresa recente.</strong></div>`}</div></section>
+          <section class="panel-card"><div class="panel-head"><div><span class="panel-kicker">ACESSO DIRETO</span><h2>Atalhos operacionais</h2></div></div><div class="shortcut-grid"><button data-go="projetos"><span>01 →</span>Novo acompanhamento de projeto</button><button data-go="auditorias"><span>02 →</span>Consultar auditorias</button><button data-go="licencas"><span>03 →</span>Ver agenda de licenças</button><button data-go="documentos"><span>04 →</span>Abrir central documental</button></div></section>
         </div>`;
     } catch (error) {
       renderError(error, renderOverview);
     }
   }
 
-  function statCard(label, value) {
-    return `<article class="stat-card"><span>${app.escapeHtml(label)}</span><strong>${Number(value) || 0}</strong><small>Dados visíveis para seu perfil</small></article>`;
+  function statCard(label, value, index, contextLabel) {
+    return `<article class="stat-card"><span class="stat-card-label"><span>${app.escapeHtml(label)}</span><i class="stat-card-index">${index}</i></span><strong>${Number(value) || 0}</strong><small>${app.escapeHtml(contextLabel)}</small><span class="stat-card-line"><i></i></span></article>`;
+  }
+
+  function renderOverviewReview() {
+    setPageTitle("Visão geral");
+    content.innerHTML = `
+      <header class="page-head"><div><span class="eyebrow">Centro de comando regulatório</span><h1>Visão geral</h1><p>Revisão visual local — nenhum dado de produção é carregado neste modo.</p></div><div class="page-context"><i></i> Ambiente de revisão</div></header>
+      <div class="stat-grid">
+        ${statCard("Estabelecimentos ativos", 0, "01", "Base operacional")}
+        ${statCard("Projetos em andamento", 0, "02", "Execução técnica")}
+        ${statCard("Documentos pendentes", 0, "03", "Rascunhos")}
+        ${statCard("Licenças a vencer", 0, "04", "Próximos 30 dias")}
+        ${statCard("Auditorias abertas", 0, "05", "Planejadas ou em curso")}
+        ${statCard("Pendências", 0, "06", "Projetos pausados")}
+      </div>
+      <div class="panel-grid">
+        <section class="panel-card"><div class="panel-head"><div><span class="panel-kicker">EXECUÇÃO</span><h2>Projetos recentes</h2><p>Andamento das frentes técnicas visíveis.</p></div><button class="button button-small" data-go="projetos">Ver todos</button></div><div class="empty"><div><strong>Nenhum projeto carregado.</strong><br><span class="small">Os dados aparecem após autenticação.</span></div></div></section>
+        <section class="panel-card"><div class="panel-head"><div><span class="panel-kicker">AGENDA REGULATÓRIA</span><h2>Próximos vencimentos</h2><p>Licenças e ARTs ordenadas por data.</p></div><button class="button button-small" data-go="licencas">Ver todos</button></div><div class="empty"><div><strong>Nenhum vencimento carregado.</strong><br><span class="small">Os dados aparecem após autenticação.</span></div></div></section>
+      </div>
+      <div class="panel-grid panel-grid-wide">
+        <section class="panel-card"><div class="panel-head"><div><span class="panel-kicker">ATIVIDADE</span><h2>Documentos recentes</h2></div></div><div class="empty"><strong>Sem atividade local.</strong></div></section>
+        <section class="panel-card"><div class="panel-head"><div><span class="panel-kicker">ESTRUTURA</span><h2>Empresas recentes</h2></div></div><div class="empty"><strong>Sem atividade local.</strong></div></section>
+        <section class="panel-card"><div class="panel-head"><div><span class="panel-kicker">ACESSO DIRETO</span><h2>Atalhos operacionais</h2></div></div><div class="shortcut-grid"><button data-go="projetos"><span>01 →</span>Projetos sanitários</button><button data-go="auditorias"><span>02 →</span>Auditorias</button><button data-go="licencas"><span>03 →</span>Licenças e ARTs</button><button data-go="documentos"><span>04 →</span>Central documental</button></div></section>
+      </div>`;
   }
 
   function miniTable(headers, rows, empty) {
@@ -260,8 +307,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     const config = modules[name];
     if (!config) return renderOverview();
     currentModule = name;
+    currentPage = 1;
+    sortState = { key: null, direction: "asc" };
     setPageTitle(config.title);
-    content.innerHTML = `<div class="loading">Carregando ${app.escapeHtml(config.title.toLowerCase())}...</div>`;
+    content.innerHTML = `<div class="loading"><div class="skeleton-lines"><i></i><i></i><i></i></div><span>Carregando ${app.escapeHtml(config.title.toLowerCase())}...</span></div>`;
     try {
       const { data, error } = await app.client.from(config.table).select(config.select).order(name === "access_requests" ? "criado_em" : (name === "empresas" ? "nome" : "criado_em"), { ascending: name === "empresas" });
       if (error) throw error;
@@ -277,7 +326,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const createLabel = config.customCreate ? "Novo documento" : `Novo ${config.singular}`;
     content.innerHTML = `
       <header class="page-head">
-        <div><span class="eyebrow">Dados reais</span><h1>${app.escapeHtml(config.title)}</h1><p>${records.length} registro(s) visível(is) para o seu perfil.</p></div>
+        <div><span class="eyebrow">Módulo operacional</span><h1>${app.escapeHtml(config.title)}</h1><p>${records.length} registro(s) visível(is) para o seu perfil.</p></div>
         ${createAllowed ? `<button class="button button-primary" id="createRecord">${app.escapeHtml(createLabel)}</button>` : ""}
       </header>
       <div class="toolbar">
@@ -294,12 +343,25 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function tableHtml(config, records) {
     if (!records.length) return `<div class="empty"><div><strong>Nenhum registro encontrado.</strong><br><span class="small">Use “Novo” quando seu perfil permitir.</span></div></div>`;
-    const headers = config.columns.map((column) => `<th>${app.escapeHtml(column[1])}</th>`).join("");
-    const rows = records.map((record) => {
-      const cells = config.columns.map(([key, _label, formatter]) => `<td>${formatter ? formatter(record[key], record) : safeValue(record[key])}</td>`).join("");
-      return `<tr data-id="${record.id}">${cells}<td><div class="table-actions">${rowActions(config, record)}</div></td></tr>`;
+    const sorted = [...records];
+    if (sortState.key) {
+      sorted.sort((left, right) => {
+        const a = String(left[sortState.key] ?? "").toLocaleLowerCase("pt-BR");
+        const b = String(right[sortState.key] ?? "").toLocaleLowerCase("pt-BR");
+        return a.localeCompare(b, "pt-BR", { numeric: true }) * (sortState.direction === "asc" ? 1 : -1);
+      });
+    }
+    const pageSize = 10;
+    const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
+    currentPage = Math.min(currentPage, totalPages);
+    const pageRecords = sorted.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+    const headers = config.columns.map(([key, label]) => `<th><button class="sort-button" type="button" data-sort="${app.escapeHtml(key)}">${app.escapeHtml(label)}<span>${sortState.key === key ? (sortState.direction === "asc" ? "↑" : "↓") : "↕"}</span></button></th>`).join("");
+    const rows = pageRecords.map((record) => {
+      const cells = config.columns.map(([key, label, formatter]) => `<td data-label="${app.escapeHtml(label)}">${formatter ? formatter(record[key], record) : safeValue(record[key])}</td>`).join("");
+      return `<tr data-id="${record.id}">${cells}<td data-label="Ações"><div class="table-actions">${rowActions(config, record)}</div></td></tr>`;
     }).join("");
-    return `<div class="table-wrap"><table><thead><tr>${headers}<th>Ações</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    const pagination = totalPages > 1 ? `<div class="pagination"><span>${sorted.length} registros · página ${currentPage} de ${totalPages}</span><div><button class="button button-small" type="button" data-page="${currentPage - 1}" ${currentPage === 1 ? "disabled" : ""}>Anterior</button><button class="button button-small" type="button" data-page="${currentPage + 1}" ${currentPage === totalPages ? "disabled" : ""}>Próxima</button></div></div>` : "";
+    return `<div class="table-wrap"><table><thead><tr>${headers}<th>Ações</th></tr></thead><tbody>${rows}</tbody></table>${pagination}</div>`;
   }
 
   function rowActions(config, record) {
@@ -342,20 +404,45 @@ document.addEventListener("DOMContentLoaded", async () => {
     return `<div class="field ${field.full ? "field-full" : ""}"><label for="${id}">${app.escapeHtml(field.label)}${field.required ? " *" : ""}</label>${control}</div>`;
   }
 
+  function formFieldsHtml(config, record) {
+    if (config.fields.length <= 4) return `<div class="form-grid">${config.fields.map((field) => inputHtml(field, record?.[field.name])).join("")}</div>`;
+    const split = Math.ceil(config.fields.length / 2);
+    const labels = currentModule === "empresas"
+      ? ["Dados gerais", "Informações sanitárias e responsáveis"]
+      : currentModule === "auditorias"
+        ? ["Dados da auditoria", "Não conformidades e plano de ação"]
+        : ["Dados gerais", "Acompanhamento e observações"];
+    return config.fields.reduce((html, field, index) => {
+      if (index === 0 || index === split) html += `<section class="form-group"><div class="form-section-label"><span>${index === 0 ? "01" : "02"}</span>${labels[index === 0 ? 0 : 1]}</div><div class="form-grid">`;
+      html += inputHtml(field, record?.[field.name]);
+      if (index === split - 1 || index === config.fields.length - 1) html += `</div></section>`;
+      return html;
+    }, "");
+  }
+
   function openRecordModal(record = null) {
     const config = modules[currentModule];
+    previousFocus = document.activeElement;
     editingId = record?.id || null;
     document.querySelector("#recordModalTitle").textContent = editingId ? `Editar ${config.singular}` : `Novo ${config.singular}`;
-    recordForm.innerHTML = `<div class="form-grid">${config.fields.map((field) => inputHtml(field, record?.[field.name])).join("")}</div><div class="form-actions"><button class="button" type="button" data-close-modal>Cancelar</button><button class="button button-primary" id="saveRecord" type="submit">Salvar</button></div>`;
+    recordForm.innerHTML = `${formFieldsHtml(config, record)}<div class="form-actions"><button class="button" type="button" data-close-modal>Cancelar</button><button class="button button-primary" id="saveRecord" type="submit">Salvar registro</button></div>`;
     recordModal.hidden = false;
     recordForm.querySelector("input,select,textarea")?.focus();
     config.fields.filter((field) => field.cnpj).forEach((field) => {
       recordForm.elements[field.name]?.addEventListener("input", (event) => { event.target.value = app.formatCnpj(event.target.value); });
     });
+    config.fields.filter((field) => field.name === "telefone").forEach((field) => {
+      recordForm.elements[field.name]?.addEventListener("input", (event) => {
+        const digits = app.digits(event.target.value).slice(0, 11);
+        event.target.value = digits.length > 10
+          ? digits.replace(/^(\d{2})(\d{5})(\d{0,4}).*/, "($1) $2-$3")
+          : digits.replace(/^(\d{2})(\d{4})(\d{0,4}).*/, "($1) $2-$3");
+      });
+    });
   }
 
-  function closeRecordModal() { recordModal.hidden = true; editingId = null; }
-  function closeInviteModal() { inviteModal.hidden = true; }
+  function closeRecordModal() { recordModal.hidden = true; editingId = null; previousFocus?.focus?.(); }
+  function closeInviteModal() { inviteModal.hidden = true; previousFocus?.focus?.(); }
 
   async function saveRecord(event) {
     event.preventDefault();
@@ -428,10 +515,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function openInvite(record) {
+    previousFocus = document.activeElement;
     document.querySelector("#inviteRequestId").value = record.id;
     document.querySelector("#inviteModalTitle").textContent = `Convidar ${record.nome}`;
     document.querySelector("#inviteCompany").innerHTML = `<option value="">Sem vínculo inicial</option>${lookups.empresas.filter((item) => item.ativo).map((item) => `<option value="${item.id}">${app.escapeHtml(item.nome)}</option>`).join("")}`;
     inviteModal.hidden = false;
+    document.querySelector("#inviteRole").focus();
   }
 
   async function submitInvite(event) {
@@ -473,6 +562,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function navigate(module) {
     document.body.classList.remove("menu-open");
+    document.querySelector("#globalSearch").value = "";
     document.querySelectorAll(".nav-item").forEach((item) => item.setAttribute("aria-current", item.dataset.module === module ? "page" : "false"));
     history.replaceState(null, "", `#${module}`);
     currentModule = module;
@@ -482,6 +572,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   content.addEventListener("click", (event) => {
     const go = event.target.closest("[data-go]");
     if (go) return navigate(go.dataset.go);
+    const sortButton = event.target.closest("[data-sort]");
+    if (sortButton) {
+      const key = sortButton.dataset.sort;
+      sortState = { key, direction: sortState.key === key && sortState.direction === "asc" ? "desc" : "asc" };
+      currentPage = 1;
+      return filterRecords();
+    }
+    const pageButton = event.target.closest("[data-page]");
+    if (pageButton && !pageButton.disabled) {
+      currentPage = Number(pageButton.dataset.page) || 1;
+      return filterRecords();
+    }
     if (event.target.closest("#createRecord")) {
       if (modules[currentModule].customCreate) return window.location.assign(app.config.documentsPath);
       return openRecordModal();
@@ -489,8 +591,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     const actionButton = event.target.closest("[data-action]");
     if (actionButton) performRowAction(actionButton.dataset.action, actionButton.closest("tr")?.dataset.id);
   });
-  content.addEventListener("input", (event) => { if (event.target.id === "recordSearch") filterRecords(); });
-  content.addEventListener("change", (event) => { if (event.target.id === "statusFilter") filterRecords(); });
+  content.addEventListener("input", (event) => { if (event.target.id === "recordSearch") { currentPage = 1; filterRecords(); } });
+  content.addEventListener("change", (event) => { if (event.target.id === "statusFilter") { currentPage = 1; filterRecords(); } });
   document.querySelector("#mainNav").addEventListener("click", (event) => {
     const item = event.target.closest("[data-module]");
     if (item && !item.hidden) navigate(item.dataset.module);
@@ -498,10 +600,51 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.querySelector("#logoutButton").addEventListener("click", app.logout);
   document.querySelector("#openMenu").addEventListener("click", () => document.body.classList.add("menu-open"));
   document.querySelector("#closeMenu").addEventListener("click", () => document.body.classList.remove("menu-open"));
+  document.querySelector("#mobileOverlay").addEventListener("click", () => document.body.classList.remove("menu-open"));
+  document.querySelector("#globalSearch").addEventListener("input", (event) => {
+    const moduleSearch = document.querySelector("#recordSearch");
+    if (!moduleSearch) return;
+    moduleSearch.value = event.target.value;
+    currentPage = 1;
+    filterRecords();
+  });
   recordModal.addEventListener("click", (event) => { if (event.target === recordModal || event.target.closest("[data-close-modal]")) closeRecordModal(); });
   inviteModal.addEventListener("click", (event) => { if (event.target === inviteModal || event.target.closest("[data-close-invite]")) closeInviteModal(); });
   recordForm.addEventListener("submit", saveRecord);
   document.querySelector("#inviteForm").addEventListener("submit", submitInvite);
+
+  document.addEventListener("keydown", (event) => {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+      event.preventDefault();
+      document.querySelector("#globalSearch").focus();
+      return;
+    }
+    const activeModal = !recordModal.hidden ? recordModal : !inviteModal.hidden ? inviteModal : null;
+    if (!activeModal) return;
+    if (event.key === "Escape") {
+      event.preventDefault();
+      activeModal === recordModal ? closeRecordModal() : closeInviteModal();
+      return;
+    }
+    if (event.key !== "Tab") return;
+    const focusable = [...activeModal.querySelectorAll("button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href]")];
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+  });
+
+  if (uiReview) {
+    context = { user: { id: "local-review", email: "revisao@origenix.local" }, profile: { nome: "Equipe ORIGENIX", papel: "admin" } };
+    shell.hidden = false;
+    document.querySelector("#currentDate").textContent = app.formatDate(new Date().toISOString(), { dateStyle: "full" });
+    document.querySelector("#userName").textContent = context.profile.nome;
+    document.querySelector("#userRole").textContent = "Revisão visual local";
+    document.querySelector("#userAvatar").textContent = "OX";
+    renderOverviewReview();
+    return;
+  }
 
   context = await app.requireAuth();
   if (!context) return;

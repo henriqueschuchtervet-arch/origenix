@@ -4,47 +4,57 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#0a0b0d">
   <title>Central de Documentos | ORIGENIX</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Orbitron:wght@700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&family=Roboto+Mono:wght@500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/css/app.css">
   <script src="https://unpkg.com/@supabase/supabase-js@2.111.0/dist/umd/supabase.js" defer></script>
   <script src="/assets/js/config.js" defer></script>
   <script src="/assets/js/core.js" defer></script>
   <script src="/assets/js/documents.js" defer></script>
 </head>
-<body>
+<body class="documents-body">
   <div id="documentsApp" hidden>
-    <header class="topbar">
-      <div style="display:flex;align-items:center;gap:1rem">
-        <a class="brand" href="/" aria-label="ORIGENIX">ORIGENI<b>X</b></a>
-        <div class="topbar-title"><strong>Central de documentos</strong><span id="documentUser">—</span></div>
+    <header class="document-topbar">
+      <div class="document-topbar-left">
+        <a class="brand brand-full" href="/" aria-label="ORIGENIX"><span class="brand-emblem">OX</span><span>ORIGENI<b>X</b><small>Regulatory OS</small></span></a>
+        <span class="route-divider"></span>
+        <div class="topbar-title"><small>ESPAÇO TÉCNICO</small><strong>Central de documentos</strong></div>
       </div>
-      <div style="display:flex;gap:.5rem">
+      <div class="document-topbar-actions">
+        <span class="document-user" id="documentUser">—</span>
         <a class="button button-small" href="/origenix-dashboard-v3.html#documentos">Voltar ao painel</a>
-        <button class="button button-quiet button-small" id="documentLogout" type="button">Sair</button>
+        <button class="icon-button" id="documentLogout" type="button" aria-label="Sair">↗</button>
       </div>
     </header>
 
-    <main class="page">
-      <header class="page-head">
-        <div><span class="eyebrow">Fluxo controlado</span><h1>Documentos técnicos</h1><p>Rascunhos, emissões versionadas e aprovações internas vinculadas ao estabelecimento.</p></div>
-        <button class="button button-primary" id="newDocument" type="button">Novo rascunho</button>
+    <main class="document-page">
+      <header class="document-page-head">
+        <div><span class="eyebrow">Editor e acervo técnico</span><h1>Documentos regulatórios</h1><p>Rascunhos, emissões versionadas e aprovações internas vinculadas ao estabelecimento.</p></div>
+        <button class="button button-primary" id="newDocument" type="button">Novo rascunho <span>＋</span></button>
       </header>
 
-      <div class="notice notice-info" style="margin-bottom:1rem">
-        A aprovação registrada aqui é um controle interno de autoria. Ela não equivale a assinatura eletrônica qualificada ou ICP-Brasil.
-      </div>
-
-      <div class="document-layout">
-        <aside class="panel-card" style="padding:0">
-          <div style="padding:.8rem;border-bottom:1px solid var(--line)"><input class="search-input" id="documentSearch" type="search" placeholder="Pesquisar documentos..." aria-label="Pesquisar documentos"></div>
-          <div class="document-list" id="documentList"><div class="loading">Carregando...</div></div>
+      <div class="document-workspace">
+        <aside class="document-library">
+          <div class="library-head"><span>ACERVO</span><small id="documentCount">Documentos visíveis</small></div>
+          <label class="library-search"><span aria-hidden="true"></span><input id="documentSearch" type="search" placeholder="Buscar documento, código..." aria-label="Pesquisar documentos"></label>
+          <div class="category-nav" id="categoryNav" aria-label="Categorias">
+            <button class="category-chip active" type="button" data-category="">Todos</button>
+            <button class="category-chip" type="button" data-category="BPF">BPF</button>
+            <button class="category-chip" type="button" data-category="POP">POPs</button>
+            <button class="category-chip" type="button" data-category="PAC">PACs</button>
+            <button class="category-chip" type="button" data-category="Memorial">Memoriais</button>
+          </div>
+          <div class="document-list" id="documentList"><div class="loading"><span>Carregando acervo...</span></div></div>
         </aside>
 
-        <section class="panel-card document-editor" id="editorPanel">
-          <div class="empty"><div><strong>Selecione ou crie um documento.</strong><br><span class="small">Os dados exibidos respeitam o acesso à empresa.</span></div></div>
+        <section class="document-stage">
+          <div class="stage-alert"><span class="stage-alert-icon">i</span><p>A aprovação registrada é um controle interno de autoria. Não equivale a assinatura eletrônica qualificada ou ICP-Brasil.</p><button type="button" aria-label="Ocultar aviso">×</button></div>
+          <div class="panel-card document-editor" id="editorPanel">
+            <div class="editor-empty"><div class="empty-document-icon" aria-hidden="true"><span></span></div><span class="eyebrow">Nenhum documento selecionado</span><strong>Escolha um item do acervo ou inicie um novo rascunho.</strong><p>O conteúdo exibido respeita o acesso ao estabelecimento vinculado.</p></div>
+          </div>
         </section>
       </div>
     </main>

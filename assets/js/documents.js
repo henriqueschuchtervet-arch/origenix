@@ -8,6 +8,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   let documents = [];
   let companies = [];
   let current = null;
+  let currentCategory = "";
+  const uiReview = ["localhost", "127.0.0.1"].includes(window.location.hostname)
+    && new URLSearchParams(window.location.search).get("ui-review") === "1";
   const editableRoles = ["admin", "consultor", "rt", "colaborador"];
 
   const statusLabel = { rascunho: "Rascunho", emitido: "Emitido", assinado: "Aprovado internamente", arquivado: "Arquivado" };
@@ -40,8 +43,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function renderList(items) {
+    document.querySelector("#documentCount").textContent = `${items.length} documento(s)`;
     if (!items.length) {
-      list.innerHTML = `<div class="empty">Nenhum documento encontrado.</div>`;
+      list.innerHTML = `<div class="empty"><div><strong>Nenhum documento encontrado.</strong><br><span class="small">Ajuste a busca ou crie um novo rascunho.</span></div></div>`;
       return;
     }
     list.innerHTML = items.map((document) => `
@@ -68,28 +72,46 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function renderEditor(document) {
     const readonly = !canEdit() || document.status === "arquivado";
+    const updatedAt = app.formatDate(document.atualizado_em || document.criado_em, { dateStyle: "medium", timeStyle: "short" });
+    const createdAt = app.formatDate(document.criado_em, { dateStyle: "medium", timeStyle: "short" });
     editor.innerHTML = `
-      <div class="panel-head">
-        <div><h2>${app.escapeHtml(document.titulo || "Novo documento")}</h2><span class="small muted">${app.escapeHtml(document.codigo || "Sem código")} · ${app.escapeHtml(document.versao || "v0")}</span></div>
-        ${statusBadge(document.status)}
+      <div class="editor-toolbar">
+        <div><span class="eyebrow">Documento em edição</span><h2>${app.escapeHtml(document.titulo || "Novo documento")}</h2></div>
+        <div class="editor-toolbar-meta">${statusBadge(document.status)}<span class="badge">${app.escapeHtml(document.versao || "v0")}</span></div>
       </div>
-      <form id="documentForm" class="document-editor" novalidate>
-        <div class="form-grid">
-          <div class="field"><label for="docTitle">Título *</label><input id="docTitle" name="titulo" maxlength="240" value="${app.escapeHtml(document.titulo || "")}" ${readonly ? "disabled" : ""} required></div>
-          <div class="field"><label for="docCompany">Estabelecimento *</label><select id="docCompany" name="empresa_id" ${readonly ? "disabled" : ""} required>${companyOptions(document.empresa_id)}</select></div>
-          <div class="field"><label for="docType">Tipo / pasta regulatória</label><input id="docType" name="tipo" maxlength="160" value="${app.escapeHtml(document.tipo || "")}" ${readonly ? "disabled" : ""}></div>
-          <div class="field"><label>Última atualização</label><input value="${app.escapeHtml(app.formatDate(document.atualizado_em || document.criado_em, { dateStyle: "medium", timeStyle: "short" }))}" disabled></div>
-          <div class="field field-full"><label for="docContent">Conteúdo técnico *</label><textarea id="docContent" name="conteudo" maxlength="100000" ${readonly ? "disabled" : ""} required>${app.escapeHtml(document.conteudo || "")}</textarea></div>
+      <form id="documentForm" novalidate>
+        <div class="document-form-layout">
+          <div class="document-form-main">
+            <div class="form-section-label"><span>01</span> Identificação e vínculo</div>
+            <div class="form-grid">
+              <div class="field field-full"><label for="docTitle">Título do documento *</label><input id="docTitle" name="titulo" maxlength="240" value="${app.escapeHtml(document.titulo || "")}" placeholder="Ex.: Programa de autocontrole" ${readonly ? "disabled" : ""} required></div>
+              <div class="field"><label for="docCompany">Estabelecimento *</label><select id="docCompany" name="empresa_id" ${readonly ? "disabled" : ""} required>${companyOptions(document.empresa_id)}</select></div>
+              <div class="field"><label for="docType">Categoria / pasta regulatória</label><input id="docType" name="tipo" list="documentCategories" maxlength="160" value="${app.escapeHtml(document.tipo || "")}" placeholder="Selecione ou informe" ${readonly ? "disabled" : ""}><datalist id="documentCategories"><option value="Processo administrativo"><option value="Memorial"><option value="BPF"><option value="POP"><option value="PAC"><option value="Bem-estar animal"><option value="Potabilidade"><option value="Controle de pragas"><option value="Registros de abate"><option value="Relatório do responsável técnico"></datalist></div>
+            </div>
+            <div class="form-section-label"><span>02</span> Conteúdo técnico</div>
+            <div class="field"><label for="docContent">Texto do documento *</label><textarea id="docContent" name="conteudo" maxlength="100000" placeholder="Estruture aqui o conteúdo técnico do documento..." ${readonly ? "disabled" : ""} required>${app.escapeHtml(document.conteudo || "")}</textarea><span class="field-hint">O conteúdo é versionado no momento da emissão.</span></div>
+            ${document.assinado_em ? `<div class="notice notice-success">Aprovação interna registrada em ${app.escapeHtml(app.formatDate(document.assinado_em, { dateStyle: "medium", timeStyle: "short" }))}.</div>` : ""}
+          </div>
+          <aside class="document-inspector" aria-label="Informações do documento">
+            <div class="inspector-title">Informações e histórico</div>
+            <div class="inspector-list">
+              <div><small>Código</small><span>${app.escapeHtml(document.codigo || "Gerado na emissão")}</span></div>
+              <div><small>Versão</small><span>${app.escapeHtml(document.versao || "v0")}</span></div>
+              <div><small>Criado em</small><span>${app.escapeHtml(createdAt)}</span></div>
+              <div><small>Atualizado em</small><span>${app.escapeHtml(updatedAt)}</span></div>
+              <div><small>Estado</small><span>${app.escapeHtml(statusLabel[document.status] || document.status || "Rascunho")}</span></div>
+              <div><small>Checksum</small><span>${app.escapeHtml(document.hash_sha256 ? `${document.hash_sha256.slice(0, 14)}…` : "Gerado na emissão")}</span></div>
+            </div>
+            ${document.hash_sha256 ? `<div class="notice checksum-notice"><strong>SHA-256</strong><br><code class="small">${app.escapeHtml(document.hash_sha256)}</code></div>` : ""}
+          </aside>
         </div>
-        ${document.hash_sha256 ? `<div class="notice"><strong>Checksum SHA-256</strong><br><code class="small">${app.escapeHtml(document.hash_sha256)}</code></div>` : ""}
-        ${document.assinado_em ? `<div class="notice notice-success">Aprovação interna registrada em ${app.escapeHtml(app.formatDate(document.assinado_em, { dateStyle: "medium", timeStyle: "short" }))}.</div>` : ""}
-        <div class="form-actions" style="flex-wrap:wrap">
-          <button class="button" type="button" data-doc-action="preview">Pré-visualizar</button>
-          <button class="button" type="button" data-doc-action="download">Baixar texto</button>
-          <button class="button" type="button" data-doc-action="print">Imprimir / salvar PDF</button>
-          ${canEdit() && document.status !== "arquivado" ? `<button class="button" type="submit" id="saveDocument">Salvar rascunho</button><button class="button button-primary" type="button" data-doc-action="emit">Emitir versão</button>` : ""}
-          ${canEdit() && document.status === "emitido" ? `<button class="button" type="button" data-doc-action="approve">Registrar aprovação interna</button>` : ""}
-          ${canEdit() && document.status !== "arquivado" ? `<button class="button button-danger" type="button" data-doc-action="archive">Arquivar</button>` : ""}
+        <div class="document-actionbar">
+          <div class="document-actionbar-group"><button class="button" type="button" data-doc-action="preview">Pré-visualizar</button><button class="button" type="button" data-doc-action="download">Baixar texto</button><button class="button" type="button" data-doc-action="print">Imprimir / PDF</button></div>
+          <div class="document-actionbar-group">
+            ${canEdit() && document.status !== "arquivado" ? `<button class="button" type="submit" id="saveDocument">Salvar rascunho</button><button class="button button-primary" type="button" data-doc-action="emit">Emitir versão</button>` : ""}
+            ${canEdit() && document.status === "emitido" ? `<button class="button" type="button" data-doc-action="approve">Registrar aprovação</button>` : ""}
+            ${canEdit() && document.status !== "arquivado" ? `<button class="button button-danger" type="button" data-doc-action="archive">Arquivar</button>` : ""}
+          </div>
         </div>
       </form>`;
   }
@@ -235,7 +257,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function filteredDocuments() {
     const term = app.cleanText(document.querySelector("#documentSearch")?.value || "", 200).toLocaleLowerCase("pt-BR");
-    return documents.filter((document) => !term || [document.titulo, document.tipo, document.codigo, document.empresas?.nome].some((value) => String(value || "").toLocaleLowerCase("pt-BR").includes(term)));
+    return documents.filter((document) => {
+      const matchesText = !term || [document.titulo, document.tipo, document.codigo, document.empresas?.nome].some((value) => String(value || "").toLocaleLowerCase("pt-BR").includes(term));
+      const matchesCategory = !currentCategory || String(document.tipo || "").toLocaleLowerCase("pt-BR").includes(currentCategory.toLocaleLowerCase("pt-BR"));
+      return matchesText && matchesCategory;
+    });
   }
 
   list.addEventListener("click", (event) => {
@@ -243,6 +269,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (item) selectDocument(item.dataset.id);
   });
   document.querySelector("#documentSearch").addEventListener("input", () => renderList(filteredDocuments()));
+  document.querySelector("#categoryNav").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-category]");
+    if (!button) return;
+    currentCategory = button.dataset.category;
+    document.querySelectorAll("[data-category]").forEach((item) => item.classList.toggle("active", item === button));
+    renderList(filteredDocuments());
+  });
+  document.querySelector(".stage-alert button").addEventListener("click", (event) => { event.currentTarget.closest(".stage-alert").hidden = true; });
   document.querySelector("#newDocument").addEventListener("click", newDraft);
   document.querySelector("#documentLogout").addEventListener("click", app.logout);
   editor.addEventListener("submit", (event) => { if (event.target.id === "documentForm") saveDraft(event); });
@@ -255,6 +289,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
     actions[button.dataset.docAction]?.();
   });
+
+  if (uiReview) {
+    context = { user: { id: "local-review", email: "revisao@origenix.local" }, profile: { nome: "Equipe ORIGENIX", papel: "admin" } };
+    root.hidden = false;
+    document.querySelector("#documentUser").textContent = "Equipe ORIGENIX · revisão visual local";
+    documents = [];
+    companies = [];
+    renderList([]);
+    newDraft();
+    document.querySelector("#docTitle")?.blur();
+    return;
+  }
 
   context = await app.requireAuth();
   if (!context) return;

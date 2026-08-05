@@ -4,37 +4,56 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="description" content="Acesso controlado à plataforma de gestão regulatória ORIGENIX.">
+  <meta name="theme-color" content="#08090a">
   <title>Área Restrita | ORIGENIX</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Orbitron:wght@700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&family=Roboto+Mono:wght@500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/css/app.css">
   <script src="https://unpkg.com/@supabase/supabase-js@2.111.0/dist/umd/supabase.js" defer></script>
   <script src="/assets/js/config.js" defer></script>
   <script src="/assets/js/core.js" defer></script>
   <script src="/assets/js/login.js" defer></script>
 </head>
-<body>
+<body class="auth-body">
+  <a class="skip-link" href="#authMain">Ir para o formulário</a>
   <main class="auth-page">
     <section class="auth-visual" aria-label="ORIGENIX">
-      <a class="brand" href="/" aria-label="Voltar para o site ORIGENIX">ORIGENI<b>X</b></a>
+      <div class="auth-visual-top">
+        <a class="brand brand-full" href="/" aria-label="Voltar para o site ORIGENIX"><span class="brand-emblem">OX</span><span>ORIGENI<b>X</b><small>Inteligência regulatória</small></span></a>
+        <span class="environment-label"><i></i> Ambiente protegido</span>
+      </div>
+
       <div class="auth-hero">
-        <span class="eyebrow">Plataforma regulatória</span>
-        <h1>Gestão técnica com <span>controle</span>.</h1>
+        <span class="eyebrow">Plataforma de controle técnico</span>
+        <h1>Informação regulatória pronta para <em>decisão.</em></h1>
         <p>Projetos sanitários, documentos, licenças e auditorias organizados por estabelecimento e protegidos por perfil de acesso.</p>
       </div>
-      <div class="auth-security">Área restrita a usuários convidados e aprovados</div>
+
+      <div class="auth-command" aria-hidden="true">
+        <div class="command-head"><span>ORIGENIX / OPERAÇÃO</span><i>ONLINE</i></div>
+        <div class="command-grid">
+          <div><small>ESTRUTURA</small><b>Empresas</b><span><i class="level-82"></i></span></div>
+          <div><small>CONTROLE</small><b>Documentos</b><span><i class="level-68"></i></span></div>
+          <div><small>VIGÊNCIA</small><b>Licenças</b><span><i class="level-76"></i></span></div>
+        </div>
+      </div>
+
+      <div class="auth-security"><span class="security-pulse"></span><div><b>Acesso restrito</b><small>Somente usuários convidados e aprovados</small></div><span class="security-code">TLS / RLS</span></div>
     </section>
 
-    <section class="auth-main">
+    <section class="auth-main" id="authMain">
+      <div class="auth-meta"><span>ÁREA DO CLIENTE</span><a href="/">Voltar ao site ↗</a></div>
       <div class="auth-card">
-        <span class="eyebrow">Acesso seguro</span>
-        <h2 id="authTitle">Entrar no ORIGENIX</h2>
-        <p class="muted small" id="authSubtitle">Use as credenciais enviadas no seu convite.</p>
+        <header class="auth-card-head">
+          <span class="eyebrow">Acesso seguro</span>
+          <h2 id="authTitle">Entrar na plataforma</h2>
+          <p class="muted" id="authSubtitle">Use as credenciais enviadas no seu convite.</p>
+        </header>
 
         <div class="auth-tabs" role="tablist" aria-label="Opções de acesso">
-          <button class="auth-tab" id="loginTab" role="tab" aria-selected="true" aria-controls="loginPanel">Entrar</button>
-          <button class="auth-tab" id="requestTab" role="tab" aria-selected="false" aria-controls="requestPanel">Solicitar acesso</button>
+          <button class="auth-tab" id="loginTab" role="tab" aria-selected="true" aria-controls="loginPanel"><span>01</span> Entrar</button>
+          <button class="auth-tab" id="requestTab" role="tab" aria-selected="false" aria-controls="requestPanel"><span>02</span> Solicitar acesso</button>
         </div>
 
         <div id="pageNotice" class="notice" hidden></div>
@@ -42,76 +61,50 @@
         <section id="loginPanel" role="tabpanel" aria-labelledby="loginTab">
           <form class="auth-form" id="loginForm" novalidate>
             <div class="field">
-              <label for="loginEmail">E-mail</label>
-              <input id="loginEmail" name="email" type="email" autocomplete="username" maxlength="320" required>
+              <label for="loginEmail">E-mail profissional</label>
+              <div class="input-shell"><span aria-hidden="true">@</span><input id="loginEmail" name="email" type="email" autocomplete="username" maxlength="320" placeholder="nome@empresa.com.br" required></div>
             </div>
             <div class="field">
               <label for="loginPassword">Senha</label>
-              <input id="loginPassword" name="password" type="password" autocomplete="current-password" minlength="8" required>
+              <div class="input-shell"><span aria-hidden="true">••</span><input id="loginPassword" name="password" type="password" autocomplete="current-password" minlength="8" placeholder="Sua senha de acesso" required></div>
             </div>
-            <button class="button button-primary" type="submit" id="loginSubmit">Entrar</button>
+            <div class="login-row"><label class="secure-note"><i></i> Sessão protegida</label><button class="text-button" type="button" id="forgotPassword">Esqueci minha senha</button></div>
+            <button class="button button-primary button-block" type="submit" id="loginSubmit">Entrar no ambiente <span aria-hidden="true">→</span></button>
           </form>
-          <div class="auth-links">
-            <a href="/">Voltar ao site</a>
-            <button type="button" id="forgotPassword">Esqueci minha senha</button>
-          </div>
         </section>
 
         <section id="requestPanel" role="tabpanel" aria-labelledby="requestTab" hidden>
+          <div class="form-section-intro"><span>Solicitação institucional</span><p>O envio não cria uma conta. A equipe ORIGENIX analisa os dados antes de liberar qualquer acesso.</p></div>
           <form class="auth-form" id="requestForm" novalidate>
+            <div class="form-section-label"><span>01</span> Identificação</div>
             <div class="form-grid">
-              <div class="field">
-                <label for="requestName">Nome completo *</label>
-                <input id="requestName" name="nome" autocomplete="name" maxlength="160" required>
-              </div>
-              <div class="field">
-                <label for="requestEmail">E-mail profissional *</label>
-                <input id="requestEmail" name="email" type="email" autocomplete="email" maxlength="320" required>
-              </div>
-              <div class="field">
-                <label for="requestPhone">Telefone</label>
-                <input id="requestPhone" name="telefone" type="tel" autocomplete="tel" maxlength="30">
-              </div>
-              <div class="field">
-                <label for="requestCompany">Empresa / estabelecimento *</label>
-                <input id="requestCompany" name="empresa" autocomplete="organization" maxlength="200" required>
-              </div>
-              <div class="field">
-                <label for="requestCnpj">CNPJ</label>
-                <input id="requestCnpj" name="cnpj" inputmode="numeric" maxlength="18" placeholder="00.000.000/0000-00">
-              </div>
-              <div class="field">
-                <label for="requestRole">Cargo ou relação</label>
-                <input id="requestRole" name="cargo" maxlength="120" placeholder="Ex.: Responsável técnico">
-              </div>
-              <div class="field field-full">
-                <label for="requestReason">Motivo da solicitação</label>
-                <textarea id="requestReason" name="motivo" maxlength="4000" placeholder="Explique brevemente quais recursos precisa acessar."></textarea>
-              </div>
-              <div class="field" aria-hidden="true" style="position:absolute;left:-10000px">
-                <label for="requestWebsite">Website</label>
-                <input id="requestWebsite" name="website" tabindex="-1" autocomplete="off">
-              </div>
+              <div class="field"><label for="requestName">Nome completo *</label><input id="requestName" name="nome" autocomplete="name" maxlength="160" required></div>
+              <div class="field"><label for="requestEmail">E-mail profissional *</label><input id="requestEmail" name="email" type="email" autocomplete="email" maxlength="320" required></div>
+              <div class="field"><label for="requestPhone">Telefone</label><input id="requestPhone" name="telefone" type="tel" autocomplete="tel" maxlength="30" inputmode="tel"></div>
+              <div class="field"><label for="requestRole">Cargo ou relação</label><input id="requestRole" name="cargo" maxlength="120" placeholder="Ex.: Responsável técnico"></div>
+            </div>
+            <div class="form-section-label"><span>02</span> Estabelecimento</div>
+            <div class="form-grid">
+              <div class="field"><label for="requestCompany">Empresa / estabelecimento *</label><input id="requestCompany" name="empresa" autocomplete="organization" maxlength="200" required></div>
+              <div class="field"><label for="requestCnpj">CNPJ</label><input id="requestCnpj" name="cnpj" inputmode="numeric" maxlength="18" placeholder="00.000.000/0000-00"></div>
+              <div class="field field-full"><label for="requestReason">Motivo da solicitação</label><textarea id="requestReason" name="motivo" maxlength="4000" placeholder="Explique brevemente quais recursos precisa acessar."></textarea></div>
+              <div class="honeypot" aria-hidden="true"><label for="requestWebsite">Website</label><input id="requestWebsite" name="website" tabindex="-1" autocomplete="off"></div>
             </div>
             <p class="field-hint">A solicitação será analisada. Nenhuma conta é criada automaticamente.</p>
-            <button class="button button-primary" type="submit" id="requestSubmit">Enviar solicitação</button>
+            <button class="button button-primary button-block" type="submit" id="requestSubmit">Enviar para análise <span aria-hidden="true">→</span></button>
           </form>
         </section>
 
         <section id="recoveryPanel" hidden>
           <form class="auth-form" id="recoveryForm" novalidate>
             <div class="notice notice-info">Defina uma nova senha com pelo menos 10 caracteres.</div>
-            <div class="field">
-              <label for="newPassword">Nova senha</label>
-              <input id="newPassword" type="password" minlength="10" autocomplete="new-password" required>
-            </div>
-            <div class="field">
-              <label for="confirmPassword">Confirmar nova senha</label>
-              <input id="confirmPassword" type="password" minlength="10" autocomplete="new-password" required>
-            </div>
-            <button class="button button-primary" type="submit" id="recoverySubmit">Atualizar senha</button>
+            <div class="field"><label for="newPassword">Nova senha</label><input id="newPassword" type="password" minlength="10" autocomplete="new-password" required></div>
+            <div class="field"><label for="confirmPassword">Confirmar nova senha</label><input id="confirmPassword" type="password" minlength="10" autocomplete="new-password" required></div>
+            <button class="button button-primary button-block" type="submit" id="recoverySubmit">Atualizar senha</button>
           </form>
         </section>
+
+        <footer class="auth-card-footer"><span>Problemas com o acesso?</span><a href="mailto:contato@origenix.com.br">Fale com a ORIGENIX</a></footer>
       </div>
     </section>
   </main>

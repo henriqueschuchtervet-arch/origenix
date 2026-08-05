@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const pages = ["index.html", "origenix-dashboard-v3.html", "origenix-emissao-v3.html", "origenix-sistema-login.html"];
-const scripts = ["assets/js/config.js", "assets/js/core.js", "assets/js/login.js", "assets/js/dashboard.js", "assets/js/documents.js"];
+const scripts = ["assets/js/config.js", "assets/js/core.js", "assets/js/landing.js", "assets/js/login.js", "assets/js/dashboard.js", "assets/js/documents.js"];
 const read = (path) => readFile(resolve(root, path), "utf8");
 
 test("required static entry points and infrastructure files exist", async () => {
@@ -43,10 +43,19 @@ test("internal pages enforce the shared authorization gate", async () => {
 
 test("landing contains no fixed demonstration metrics or dates", async () => {
   const html = await read("index.html");
+  const script = await read("assets/js/landing.js");
   for (const value of ["240</span>+", "180</span>+", "1.4</span>K", "95</span>+", "14/07/2026", "18/06/2026"]) {
     assert.ok(!html.includes(value), `demo value remains: ${value}`);
   }
-  assert.match(html, /origem:\s*'landing_page'/);
+  assert.match(script, /origem:\s*["']landing_page["']/);
+});
+
+test("visual review mode is restricted to local hosts", async () => {
+  for (const path of ["assets/js/dashboard.js", "assets/js/documents.js"]) {
+    const source = await read(path);
+    assert.match(source, /\["localhost",\s*"127\.0\.0\.1"\]\.includes\(window\.location\.hostname\)/);
+    assert.match(source, /get\("ui-review"\)\s*===\s*"1"/);
+  }
 });
 
 test("HTML IDs are unique per page", async () => {

@@ -35,6 +35,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   loginTab.addEventListener("click", () => setPanel("login"));
   requestTab.addEventListener("click", () => setPanel("request"));
+  if (params.get("tab") === "request") setPanel("request");
 
   const reason = params.get("reason");
   if (reason === "pending") showNotice("Seu acesso ainda não está ativo. Aguarde a aprovação administrativa.", "info");
@@ -110,6 +111,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   $("#requestCnpj").addEventListener("input", (event) => {
     event.target.value = app.formatCnpj(event.target.value);
+  });
+
+  $("#requestPhone").addEventListener("input", (event) => {
+    const digits = app.digits(event.target.value).slice(0, 11);
+    event.target.value = digits.length > 10
+      ? digits.replace(/^(\d{2})(\d{5})(\d{0,4}).*/, "($1) $2-$3")
+      : digits.replace(/^(\d{2})(\d{4})(\d{0,4}).*/, "($1) $2-$3");
   });
 
   $("#requestForm").addEventListener("submit", async (event) => {

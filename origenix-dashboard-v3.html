@@ -4,76 +4,85 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#0a0b0d">
   <title>Gestão Regulatória | ORIGENIX</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Orbitron:wght@700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&family=Roboto+Mono:wght@500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/css/app.css">
   <script src="https://unpkg.com/@supabase/supabase-js@2.111.0/dist/umd/supabase.js" defer></script>
   <script src="/assets/js/config.js" defer></script>
   <script src="/assets/js/core.js" defer></script>
   <script src="/assets/js/dashboard.js" defer></script>
 </head>
-<body>
+<body class="dashboard-body">
   <div class="app-shell" id="appShell" hidden>
+    <div class="mobile-overlay" id="mobileOverlay" aria-hidden="true"></div>
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-head">
-        <a class="brand" href="/" aria-label="ORIGENIX">ORIGENI<b>X</b></a>
-        <button class="button button-quiet button-small mobile-menu" id="closeMenu" type="button" aria-label="Fechar menu">×</button>
+        <a class="brand brand-full" href="/" aria-label="ORIGENIX"><span class="brand-emblem">OX</span><span>ORIGENI<b>X</b><small>Regulatory OS</small></span></a>
+        <button class="icon-button mobile-menu" id="closeMenu" type="button" aria-label="Fechar menu">×</button>
       </div>
+
+      <div class="workspace-chip"><span class="workspace-dot"></span><div><small>ESPAÇO DE TRABALHO</small><b>Operação regulatória</b></div><span class="workspace-caret">⌄</span></div>
+
       <nav class="sidebar-nav" id="mainNav" aria-label="Módulos">
-        <button class="nav-item" data-module="overview" aria-current="page">Visão geral</button>
-        <button class="nav-item" data-module="empresas">Estabelecimentos</button>
-        <button class="nav-item" data-module="projetos">Projetos sanitários</button>
-        <button class="nav-item" data-module="documentos">Documentos</button>
-        <button class="nav-item" data-module="rts">Responsáveis técnicos</button>
-        <button class="nav-item" data-module="licencas">Licenças e ARTs</button>
-        <button class="nav-item" data-module="auditorias">Auditorias</button>
-        <button class="nav-item" data-module="leads" data-roles="admin">Leads</button>
-        <button class="nav-item" data-module="faturamento" data-roles="admin,consultor">Faturamento</button>
-        <button class="nav-item" data-module="access_requests" data-roles="admin">Solicitações de acesso</button>
+        <span class="nav-label">Painel</span>
+        <button class="nav-item" data-module="overview" aria-current="page"><span class="nav-icon" data-icon="overview"></span><span>Visão geral</span></button>
+        <span class="nav-label">Operação técnica</span>
+        <button class="nav-item" data-module="empresas"><span class="nav-icon" data-icon="company"></span><span>Estabelecimentos</span></button>
+        <button class="nav-item" data-module="projetos"><span class="nav-icon" data-icon="project"></span><span>Projetos sanitários</span></button>
+        <button class="nav-item" data-module="documentos"><span class="nav-icon" data-icon="document"></span><span>Documentos</span></button>
+        <button class="nav-item" data-module="rts"><span class="nav-icon" data-icon="people"></span><span>Responsáveis técnicos</span></button>
+        <button class="nav-item" data-module="licencas"><span class="nav-icon" data-icon="license"></span><span>Licenças e ARTs</span></button>
+        <button class="nav-item" data-module="auditorias"><span class="nav-icon" data-icon="audit"></span><span>Auditorias</span></button>
+        <span class="nav-label" data-roles="admin,consultor">Administração</span>
+        <button class="nav-item" data-module="leads" data-roles="admin"><span class="nav-icon" data-icon="lead"></span><span>Leads</span></button>
+        <button class="nav-item" data-module="faturamento" data-roles="admin,consultor"><span class="nav-icon" data-icon="finance"></span><span>Financeiro</span></button>
+        <button class="nav-item" data-module="access_requests" data-roles="admin"><span class="nav-icon" data-icon="access"></span><span>Solicitações de acesso</span></button>
+        <button class="nav-item nav-item-disabled" type="button" disabled aria-disabled="true"><span class="nav-icon" data-icon="settings"></span><span>Configurações</span><small>em breve</small></button>
       </nav>
+
       <div class="sidebar-foot">
         <div class="user-chip">
           <div class="avatar" id="userAvatar">OX</div>
-          <div><strong id="userName">Carregando</strong><span id="userRole">—</span></div>
+          <div class="user-meta"><strong id="userName">Carregando</strong><span id="userRole">—</span></div>
+          <button class="icon-button" id="logoutButton" type="button" aria-label="Sair da plataforma">↗</button>
         </div>
-        <button class="button button-quiet" id="logoutButton" type="button" style="width:100%">Sair</button>
       </div>
     </aside>
 
     <main class="app-main">
       <header class="topbar">
-        <div style="display:flex;align-items:center;gap:.75rem">
-          <button class="button button-quiet mobile-menu" id="openMenu" type="button" aria-label="Abrir menu">☰</button>
-          <div class="topbar-title"><strong id="topbarModule">Visão geral</strong><span id="currentDate">—</span></div>
+        <div class="topbar-left">
+          <button class="icon-button mobile-menu" id="openMenu" type="button" aria-label="Abrir menu">☰</button>
+          <div class="topbar-title"><small>ORIGENIX / OPERAÇÃO</small><strong id="topbarModule">Visão geral</strong></div>
         </div>
-        <a class="button button-small" href="/origenix-emissao-v3.html">Central de documentos</a>
+        <label class="global-search"><span aria-hidden="true"></span><input id="globalSearch" type="search" placeholder="Buscar no módulo atual" autocomplete="off"><kbd>Ctrl K</kbd></label>
+        <div class="topbar-actions">
+          <div class="topbar-date"><span id="currentDate">—</span><small>Dados conforme seu perfil</small></div>
+          <a class="button button-primary button-small" href="/origenix-emissao-v3.html">Central de documentos <span>→</span></a>
+        </div>
       </header>
       <section class="page" id="pageContent" aria-live="polite">
-        <div class="loading">Validando acesso seguro...</div>
+        <div class="loading"><div class="skeleton-lines"><i></i><i></i><i></i></div><span>Validando acesso seguro...</span></div>
       </section>
     </main>
   </div>
 
   <div class="modal-backdrop" id="recordModal" hidden>
-    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="recordModalTitle">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="recordModalTitle" aria-describedby="recordModalDescription">
       <header class="modal-head">
-        <h2 id="recordModalTitle">Registro</h2>
-        <button class="button button-quiet button-small" type="button" data-close-modal aria-label="Fechar">×</button>
+        <div><span class="eyebrow">Registro operacional</span><h2 id="recordModalTitle">Registro</h2><p id="recordModalDescription">Preencha os dados e confirme para salvar.</p></div>
+        <button class="icon-button" type="button" data-close-modal aria-label="Fechar">×</button>
       </header>
-      <div class="modal-body">
-        <form id="recordForm" novalidate></form>
-      </div>
+      <div class="modal-body"><form id="recordForm" novalidate></form></div>
     </section>
   </div>
 
   <div class="modal-backdrop" id="inviteModal" hidden>
-    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="inviteModalTitle">
-      <header class="modal-head">
-        <h2 id="inviteModalTitle">Aprovar e convidar</h2>
-        <button class="button button-quiet button-small" type="button" data-close-invite aria-label="Fechar">×</button>
-      </header>
+    <section class="modal modal-compact" role="dialog" aria-modal="true" aria-labelledby="inviteModalTitle">
+      <header class="modal-head"><div><span class="eyebrow">Controle de acesso</span><h2 id="inviteModalTitle">Aprovar e convidar</h2><p>Defina o papel e o escopo inicial do usuário.</p></div><button class="icon-button" type="button" data-close-invite aria-label="Fechar">×</button></header>
       <div class="modal-body">
         <form id="inviteForm" class="auth-form">
           <input type="hidden" id="inviteRequestId">
